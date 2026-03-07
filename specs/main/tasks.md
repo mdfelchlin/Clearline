@@ -101,7 +101,7 @@
 - [ ] T033 [US2] Implement GET/POST /api/v1/budgets and GET /api/v1/budgets/{year}/summary (totalIncome from Official income, totalExpenses, amountLeftOver); api/src/routes/budgets.ts
 - [ ] T034 [US2] Implement GET/POST/DELETE /api/v1/budgets/{year}/income; api/src/routes/budgets.ts or income sub-routes
 - [ ] T035 [US2] Implement GET/POST/PUT/PATCH/DELETE for categories and line items per contracts/api-spec.md; api/src/routes/budgets.ts
-- [ ] T035b [US2] Implement GET/POST /api/v1/stocks and GET /api/v1/stocks/{id}/price (stub or optional external API) per contracts/api-spec.md; api/src/routes/stocks.ts
+- [ ] T035b [US2] Implement GET/POST /api/v1/stocks and GET /api/v1/stocks/{id}/price using Finnhub API or stub per research.md §7; FINNHUB_API_KEY in env; cache price responses ~15 min; api/src/routes/stocks.ts
 - [ ] T036 [US2] Ensure one Income and one Taxes special category per budget (system-created); api services
 - [ ] T037 [US2] Implement Income page: list income by type, add (type selector + type-specific dialog), Edit/Duplicate/Delete, status Expected/Official; frontend/src/pages/budget/Income.tsx
 - [ ] T038 [US2] Implement Budget Overview page: three cards (Total Income, Total Expenses, Amount Left Over), breakdown, one chart (expenses by category); frontend/src/pages/budget/BudgetOverview.tsx

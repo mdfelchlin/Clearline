@@ -72,9 +72,31 @@ Resolves technical choices for the stack (React + Vite + TypeScript, Node API on
 
 ## 7. Stock price data (ESPP/RSU estimates)
 
-**Decision**: Third-party market-data API (e.g. Yahoo Finance, Alpha Vantage) for current/delayed price by ticker; cache (e.g. 15 min) to respect rate limits and cost. Optional for MVP if ESPP/RSU real-time estimates are deferred.
+**Decision**: Use **Finnhub** in the Node API for current price by ticker. Finnhub offers a free tier with an official REST API. Cache responses (e.g. 15 min) to stay within rate limits. Optional for MVP if ESPP/RSU real-time estimates are deferred; can stub the price endpoint until needed.
 
-**Rationale**: PRD §6.1 and spec mention real-time estimates for RSU/ESPP when linked to a stock; PRD notes rate limits and caching. Can stub or defer to post-MVP if needed to ship faster.
+**Rationale**: Finnhub provides a free, official API for stock quotes—no scraping or unofficial wrappers. Good fit for a cost-conscious React + Node app: register at [finnhub.io](https://finnhub.io) for an API key, call the quote endpoint from the API server. Free tier has rate limits; caching keeps usage low and improves resilience.
+
+**Implementation note (Node API)**:
+- No extra npm package required: use `fetch` or `axios` to call `GET https://finnhub.io/api/v1/quote?symbol={SYMBOL}&token={FINNHUB_API_KEY}` (or send token via `X-Finnhub-Token` header).
+- Response: `c` = current price; also `h`, `l`, `o`, `pc` (high, low, open, previous close). Expose via GET `/api/v1/stocks/{id}/price` (or by symbol).
+- Set `FINNHUB_API_KEY` in API env (see `.env.example`). Cache results (in-memory or short TTL) to limit external calls.
+
+**Example (API route handler)**:
+```ts
+async function getPrice(symbol: string): Promise<number | null> {
+  const token = process.env.FINNHUB_API_KEY;
+  if (!token) return null;
+  const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${token}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data?.c ?? null;  // c = current price
+}
+```
+
+**Alternatives considered**:
+- yahoo-finance2: free but unofficial; can break if Yahoo changes layout.
+- Alpha Vantage / other paid APIs: more features; add cost; consider later if needed.
+- Stub only for MVP: valid; add Finnhub when implementing T035b if RSU/ESPP price display is in scope.
 
 ---
 

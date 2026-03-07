@@ -17,7 +17,7 @@ Build the Clearline MVP as a single responsive web app: React (TypeScript + Vite
 **Project Type**: Web application (frontend SPA + backend API).  
 **Performance Goals**: Page load < 2s; mobile screens < 1.5s; DB queries < 500ms p95; 100 concurrent users (NFR-PERF-001–004).  
 **Constraints**: TLS 1.3, encryption at rest; no logging of sensitive financial data; WCAG 2.1 AA; touch targets ≥44px on phone (NFR-SEC, NFR-USE).  
-**Stocks API**: GET/POST `/api/v1/stocks` and GET price are in the API contract; implement with stub or optional external API for MVP (RSU/ESPP income types); full price integration can follow in a later phase.  
+**Stocks API**: GET/POST `/api/v1/stocks` and GET price are in the API contract; for MVP use **Finnhub** (free tier, official API) for price-by-ticker; set `FINNHUB_API_KEY` in API env; cache (e.g. 15 min) to respect rate limits; see research.md §7. Stub acceptable if RSU/ESPP price is deferred.  
 **Scale/Scope**: Single household account; MVP scope per PRD §8 Phases 1–5 and §10.1.
 
 ## Constitution Check
