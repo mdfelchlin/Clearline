@@ -15,7 +15,7 @@
 
 ## Path Conventions
 
-- **Web app**: `frontend/src/`, `api/src/`, `tests/unit/frontend/`, `tests/unit/api/`, `tests/integration/`, `tests/contract/`
+- **Web app**: `src/frontend/src/`, `src/api/src/`, `tests/unit/frontend/`, `tests/unit/api/`, `tests/integration/`, `tests/contract/`
 - All paths relative to repository root (Clearline)
 
 ---
@@ -24,14 +24,14 @@
 
 **Purpose**: Project initialization and basic structure per plan.md
 
-- [ ] T001 Create directory structure: frontend/, api/, tests/unit/frontend/, tests/unit/api/, tests/integration/, tests/contract/ per plan.md
-- [ ] T002 Initialize frontend with Vite + React + TypeScript: frontend/package.json, frontend/vite.config.ts, frontend/tsconfig.json, frontend/index.html
-- [ ] T003 Initialize API with Node.js + TypeScript: api/package.json, api/tsconfig.json, api/src entry (Express or Fastify or Vercel serverless layout)
-- [ ] T004 [P] Add frontend dependencies: React, React Router, TanStack Query, @supabase/supabase-js; frontend/package.json
-- [ ] T005 [P] Add API dependencies: Express or Fastify, Zod, @supabase/supabase-js, Pino or structured logging; api/package.json
-- [ ] T006 [P] Configure ESLint and Prettier for frontend (frontend/.eslintrc, frontend/.prettierrc or equivalent)
-- [ ] T007 [P] Configure ESLint and Prettier for API (api/.eslintrc, api/.prettierrc or equivalent)
-- [ ] T008 Add Vitest and React Testing Library to frontend for unit tests; frontend/vite.config.ts and frontend/package.json
+- [ ] T001 Create directory structure: src/frontend/, src/api/, tests/unit/frontend/, tests/unit/api/, tests/integration/, tests/contract/ per plan.md
+- [ ] T002 Initialize frontend with Vite + React + TypeScript: src/frontend/package.json, src/frontend/vite.config.ts, src/frontend/tsconfig.json, src/frontend/index.html
+- [ ] T003 Initialize API with Node.js + TypeScript: src/api/package.json, src/api/tsconfig.json, src/api/src entry (Express or Fastify or Vercel serverless layout)
+- [ ] T004 [P] Add frontend dependencies: React, React Router, TanStack Query, @supabase/supabase-js; src/frontend/package.json
+- [ ] T005 [P] Add API dependencies: Express or Fastify, Zod, @supabase/supabase-js, Pino or structured logging; src/api/package.json
+- [ ] T006 [P] Configure ESLint and Prettier for frontend (src/frontend/.eslintrc, src/frontend/.prettierrc or equivalent)
+- [ ] T007 [P] Configure ESLint and Prettier for API (src/api/.eslintrc, src/api/.prettierrc or equivalent)
+- [ ] T008 Add Vitest and React Testing Library to frontend for unit tests; src/frontend/vite.config.ts and src/frontend/package.json
 
 **Checkpoint**: Repo has frontend and api packages; `npm run dev` runs frontend; API can start or be stubbed.
 
@@ -43,15 +43,15 @@
 
 - [ ] T009 Create Supabase migration(s) for schema per data-model.md and PRD §6.2: users, accounts, account_members, account_invitations (in supabase/migrations/ or documented SQL)
 - [ ] T010 Add Supabase migrations for budgets, budget_income_sources, budget_categories, budget_category_line_items, stocks, tax_profiles, tax_only_deductions
-- [ ] T011 [P] Implement API auth middleware: verify JWT, attach user to request; api/src/middleware/auth.ts
-- [ ] T012 [P] Implement API base routing and /api/v1 mount; api/src/ (or Vercel api/ routes)
-- [ ] T013 [P] Create Supabase client helper for API (service role); api/src/lib/supabase.ts
-- [ ] T014 Configure centralized error handling and user-friendly response format (no stack traces, no sensitive data); api/src/middleware or error handler
-- [ ] T015 Configure structured logging (Pino or equivalent); do not log sensitive financial data; api/src/lib/logger.ts or equivalent
-- [ ] T016 Add environment configuration: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET (or Supabase JWT); api/.env.example and validation
-- [ ] T017 Add frontend API client base: base URL (VITE_API_URL or proxy), auth header injection; frontend/src/services/api.ts
-- [ ] T018 Add AuthContext and useAuth hook for frontend (session, user, login redirect); frontend/src/context/AuthContext.tsx, frontend/src/hooks/useAuth.ts
-- [ ] T018b [P] Implement auth rate limiting (max 5 failed logins per 15 min) on auth endpoints per NFR-SEC-006 and constitution §V; api/src/middleware/rateLimit.ts or api/src/routes/auth.ts
+- [ ] T011 [P] Implement API auth middleware: verify JWT, attach user to request; src/api/src/middleware/auth.ts
+- [ ] T012 [P] Implement API base routing and /api/v1 mount; src/api/src/ (or Vercel api/ routes)
+- [ ] T013 [P] Create Supabase client helper for API (service role); src/api/src/lib/supabase.ts
+- [ ] T014 Configure centralized error handling and user-friendly response format (no stack traces, no sensitive data); src/api/src/middleware or error handler
+- [ ] T015 Configure structured logging (Pino or equivalent); do not log sensitive financial data; src/api/src/lib/logger.ts or equivalent
+- [ ] T016 Add environment configuration: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET (or Supabase JWT); src/api/.env.example and validation
+- [ ] T017 Add frontend API client base: base URL (VITE_API_URL or proxy), auth header injection; src/frontend/src/services/api.ts
+- [ ] T018 Add AuthContext and useAuth hook for frontend (session, user, login redirect); src/frontend/src/context/AuthContext.tsx, src/frontend/src/hooks/useAuth.ts
+- [ ] T018b [P] Implement auth rate limiting (max 5 failed logins per 15 min) on auth endpoints per NFR-SEC-006 and constitution §V; src/api/src/middleware/rateLimit.ts or src/api/src/routes/auth.ts
 
 **Checkpoint**: Foundation ready — DB schema exists, API can authenticate and route, frontend has API client and auth context. User story implementation can begin.
 
@@ -70,16 +70,16 @@
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] Implement POST /api/v1/auth/google: validate Google token, create/fetch user and account (first user = owner), return JWT; api/src/routes/auth.ts
-- [ ] T022 [US1] Implement POST /api/v1/auth/email for test accounts (magic link or email+password via Supabase); api/src/routes/auth.ts
-- [ ] T023 [US1] Implement GET /api/v1/auth/user and POST /api/v1/auth/refresh; api/src/routes/auth.ts
-- [ ] T024 [US1] Implement Login page: Google and email sign-in only; no app content when unauthenticated; frontend/src/pages/auth/Login.tsx
-- [ ] T025 [US1] Implement OAuth callback route and redirect to Dashboard on success; frontend/src/pages/auth/GoogleCallback.tsx or equivalent
-- [ ] T026 [US1] Implement route guard: all routes except login and callback require auth; redirect unauthenticated to login with return URL preserved (query param or sessionStorage) and redirect to that URL after re-auth per FR-AUTH-006; frontend/src/App.tsx or router
-- [ ] T027 [US1] Implement MainLayout with top bar (year selector placeholder) and Sidebar; frontend/src/components/layout/MainLayout.tsx, Sidebar.tsx
-- [ ] T028 [US1] Implement Dashboard page (placeholder summary cards and year in top bar); frontend/src/pages/Dashboard.tsx
-- [ ] T029 [US1] Implement UserArea (avatar, display name) and sign-out: clear session, redirect to login; frontend/src/components/layout/UserArea.tsx and authService logout
-- [ ] T030 [US1] Wire authService (login, logout, get user, refresh) to API; frontend/src/services/authService.ts
+- [ ] T021 [US1] Implement POST /api/v1/auth/google: validate Google token, create/fetch user and account (first user = owner), return JWT; src/api/src/routes/auth.ts
+- [ ] T022 [US1] Implement POST /api/v1/auth/email for test accounts (magic link or email+password via Supabase); src/api/src/routes/auth.ts
+- [ ] T023 [US1] Implement GET /api/v1/auth/user and POST /api/v1/auth/refresh; src/api/src/routes/auth.ts
+- [ ] T024 [US1] Implement Login page: Google and email sign-in only; no app content when unauthenticated; src/frontend/src/pages/auth/Login.tsx
+- [ ] T025 [US1] Implement OAuth callback route and redirect to Dashboard on success; src/frontend/src/pages/auth/GoogleCallback.tsx or equivalent
+- [ ] T026 [US1] Implement route guard: all routes except login and callback require auth; redirect unauthenticated to login with return URL preserved (query param or sessionStorage) and redirect to that URL after re-auth per FR-AUTH-006; src/frontend/src/App.tsx or router
+- [ ] T027 [US1] Implement MainLayout with top bar (year selector placeholder) and Sidebar; src/frontend/src/components/layout/MainLayout.tsx, Sidebar.tsx
+- [ ] T028 [US1] Implement Dashboard page (placeholder summary cards and year in top bar); src/frontend/src/pages/Dashboard.tsx
+- [ ] T029 [US1] Implement UserArea (avatar, display name) and sign-out: clear session, redirect to login; src/frontend/src/components/layout/UserArea.tsx and authService logout
+- [ ] T030 [US1] Wire authService (login, logout, get user, refresh) to API; src/frontend/src/services/authService.ts
 
 **Checkpoint**: User Story 1 complete. Sign in → Dashboard; sign out → login; no app content when unauthenticated.
 
@@ -98,17 +98,17 @@
 
 ### Implementation for User Story 2
 
-- [ ] T033 [US2] Implement GET/POST /api/v1/budgets and GET /api/v1/budgets/{year}/summary (totalIncome from Official income, totalExpenses, amountLeftOver); api/src/routes/budgets.ts
-- [ ] T034 [US2] Implement GET/POST/DELETE /api/v1/budgets/{year}/income; api/src/routes/budgets.ts or income sub-routes
-- [ ] T035 [US2] Implement GET/POST/PUT/PATCH/DELETE for categories and line items per contracts/api-spec.md; api/src/routes/budgets.ts
-- [ ] T035b [US2] Implement GET/POST /api/v1/stocks and GET /api/v1/stocks/{id}/price using Finnhub API or stub per research.md §7; FINNHUB_API_KEY in env; cache price responses ~15 min; api/src/routes/stocks.ts
+- [ ] T033 [US2] Implement GET/POST /api/v1/budgets and GET /api/v1/budgets/{year}/summary (totalIncome from Official income, totalExpenses, amountLeftOver); src/api/src/routes/budgets.ts
+- [ ] T034 [US2] Implement GET/POST/DELETE /api/v1/budgets/{year}/income; src/api/src/routes/budgets.ts or income sub-routes
+- [ ] T035 [US2] Implement GET/POST/PUT/PATCH/DELETE for categories and line items per contracts/api-spec.md; src/api/src/routes/budgets.ts
+- [ ] T035b [US2] Implement GET/POST /api/v1/stocks and GET /api/v1/stocks/{id}/price using Finnhub API or stub per research.md §7; FINNHUB_API_KEY in env; cache price responses ~15 min; src/api/src/routes/stocks.ts
 - [ ] T036 [US2] Ensure one Income and one Taxes special category per budget (system-created); api services
-- [ ] T037 [US2] Implement Income page: list income by type, add (type selector + type-specific dialog), Edit/Duplicate/Delete, status Expected/Official; frontend/src/pages/budget/Income.tsx
-- [ ] T038 [US2] Implement Budget Overview page: three cards (Total Income, Total Expenses, Amount Left Over), breakdown, one chart (expenses by category); frontend/src/pages/budget/BudgetOverview.tsx
-- [ ] T039 [US2] Implement Budget Categories page: Income group (read-only), expense categories, line items (amount, period Annual/Monthly), Taxes category (read-only from API); frontend/src/pages/budget/BudgetCategories.tsx
-- [ ] T040 [US2] Implement budgetService and taxService (get summary, income, categories, line items); frontend/src/services/budgetService.ts
-- [ ] T041 [US2] Income page empty state: CTA "Add your first income source" when no income for year; frontend/src/pages/budget/Income.tsx
-- [ ] T042 [US2] Budget Categories empty state: CTA when no categories/line items; frontend/src/pages/budget/BudgetCategories.tsx
+- [ ] T037 [US2] Implement Income page: list income by type, add (type selector + type-specific dialog), Edit/Duplicate/Delete, status Expected/Official; src/frontend/src/pages/budget/Income.tsx
+- [ ] T038 [US2] Implement Budget Overview page: three cards (Total Income, Total Expenses, Amount Left Over), breakdown, one chart (expenses by category); src/frontend/src/pages/budget/BudgetOverview.tsx
+- [ ] T039 [US2] Implement Budget Categories page: Income group (read-only), expense categories, line items (amount, period Annual/Monthly), Taxes category (read-only from API); src/frontend/src/pages/budget/BudgetCategories.tsx
+- [ ] T040 [US2] Implement budgetService and taxService (get summary, income, categories, line items); src/frontend/src/services/budgetService.ts
+- [ ] T041 [US2] Income page empty state: CTA "Add your first income source" when no income for year; src/frontend/src/pages/budget/Income.tsx
+- [ ] T042 [US2] Budget Categories empty state: CTA when no categories/line items; src/frontend/src/pages/budget/BudgetCategories.tsx
 
 **Checkpoint**: User Story 2 complete. Income page is single source of truth; Budget Overview and Categories show correct totals and empty states.
 
@@ -127,13 +127,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T045 [US3] Implement GET/PUT /api/v1/tax/{year} (tax profile); GET /api/v1/tax/{year}/deductions and /deductions/other CRUD; api/src/routes/tax.ts
-- [ ] T046 [US3] Implement GET /api/v1/tax/{year}/calculate: read income from budgets/{year}/income (Official only), budget-derived deductions, tax_only_deductions; apply federal brackets, standard deduction, credits; api/src/routes/tax.ts and service
-- [ ] T047 [US3] Implement GET /api/v1/tax/{year}/summary for dashboard; api/src/routes/tax.ts
-- [ ] T048 [US3] Implement TaxDashboard page: Income group (read-only, link "Edit income" to Income tab), Deductions section (budget read-only + add/edit tax-only), Tax settings (state, filing status, dependents, pre-tax), estimated tax bill; frontend/src/pages/tax/TaxDashboard.tsx
-- [ ] T049 [US3] Tax calculation service: 2026 brackets (Single/MFJ), standard deduction, FICA by income type per PRD; api/src/services/taxCalculation.ts or equivalent
-- [ ] T050 [US3] Tax empty/guided state: message and links when no Official income or no tax profile; frontend/src/pages/tax/TaxDashboard.tsx
-- [ ] T051 [US3] Wire taxService (get profile, deductions, calculate, summary) in frontend; frontend/src/services/taxService.ts
+- [ ] T045 [US3] Implement GET/PUT /api/v1/tax/{year} (tax profile); GET /api/v1/tax/{year}/deductions and /deductions/other CRUD; src/api/src/routes/tax.ts
+- [ ] T046 [US3] Implement GET /api/v1/tax/{year}/calculate: read income from budgets/{year}/income (Official only), budget-derived deductions, tax_only_deductions; apply federal brackets, standard deduction, credits; src/api/src/routes/tax.ts and service
+- [ ] T047 [US3] Implement GET /api/v1/tax/{year}/summary for dashboard; src/api/src/routes/tax.ts
+- [ ] T048 [US3] Implement TaxDashboard page: Income group (read-only, link "Edit income" to Income tab), Deductions section (budget read-only + add/edit tax-only), Tax settings (state, filing status, dependents, pre-tax), estimated tax bill; src/frontend/src/pages/tax/TaxDashboard.tsx
+- [ ] T049 [US3] Tax calculation service: 2026 brackets (Single/MFJ), standard deduction, FICA by income type per PRD; src/api/src/services/taxCalculation.ts or equivalent
+- [ ] T050 [US3] Tax empty/guided state: message and links when no Official income or no tax profile; src/frontend/src/pages/tax/TaxDashboard.tsx
+- [ ] T051 [US3] Wire taxService (get profile, deductions, calculate, summary) in frontend; src/frontend/src/services/taxService.ts
 
 **Checkpoint**: User Story 3 complete. Tax view shows read-only income, deductions, settings, and estimated tax; tax-only deductions affect calculation.
 
@@ -152,11 +152,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T054 [US4] Implement GET /api/v1/accounts, GET/POST /api/v1/accounts/{id}/members, GET /api/v1/accounts/{id}/invitations, DELETE members, POST /api/v1/invitations/accept; api/src/routes/accounts.ts
-- [ ] T055 [US4] Implement PUT /api/v1/auth/user/preferences (theme, notification preferences, display name); api/src/routes/auth.ts
-- [ ] T056 [US4] Implement Settings page: Notification Preferences, Invite Users (owner), Account & Members (list, remove, leave), Profile (display name, email read-only), Appearance (theme Dark/Light); frontend/src/pages/settings/Settings.tsx
+- [ ] T054 [US4] Implement GET /api/v1/accounts, GET/POST /api/v1/accounts/{id}/members, GET /api/v1/accounts/{id}/invitations, DELETE members, POST /api/v1/invitations/accept; src/api/src/routes/accounts.ts
+- [ ] T055 [US4] Implement PUT /api/v1/auth/user/preferences (theme, notification preferences, display name); src/api/src/routes/auth.ts
+- [ ] T056 [US4] Implement Settings page: Notification Preferences, Invite Users (owner), Account & Members (list, remove, leave), Profile (display name, email read-only), Appearance (theme Dark/Light); src/frontend/src/pages/settings/Settings.tsx
 - [ ] T057 [US4] Theme persistence: save theme via API on change, load on app init; apply immediately (no restart); frontend ThemeContext or useTheme + authService preferences
-- [ ] T058 [US4] Sidebar UserArea click navigates to Settings; frontend/src/components/layout/UserArea.tsx and Sidebar.tsx
+- [ ] T058 [US4] Sidebar UserArea click navigates to Settings; src/frontend/src/components/layout/UserArea.tsx and Sidebar.tsx
 - [ ] T059 [US4] Invitation flow: owner sends invite (token, expiry); invitee accepts via link or token; add to account_members, update invitation status; api and frontend invite UI
 
 **Checkpoint**: User Story 4 complete. Invites work; Settings and theme persistence work; UserArea → Settings.
@@ -171,9 +171,9 @@
 
 ### Implementation for User Story 5
 
-- [ ] T060 [US5] Implement year selector in MainLayout top bar: dropdown with available years (current + years with budget/data), "Add year" (e.g. 2016–2036); store selected year in context or URL; frontend/src/components/layout/MainLayout.tsx and YearSelector component
+- [ ] T060 [US5] Implement year selector in MainLayout top bar: dropdown with available years (current + years with budget/data), "Add year" (e.g. 2016–2036); store selected year in context or URL; src/frontend/src/components/layout/MainLayout.tsx and YearSelector component
 - [ ] T061 [US5] Pass selected year to Dashboard, Budget (all tabs), and Tax; all API calls use selected year; frontend context or route/state
-- [ ] T062 [US5] Dashboard empty state: when no income/budget for selected year, show message and CTAs (add income, set up budget); frontend/src/pages/Dashboard.tsx
+- [ ] T062 [US5] Dashboard empty state: when no income/budget for selected year, show message and CTAs (add income, set up budget); src/frontend/src/pages/Dashboard.tsx
 - [ ] T063 [US5] Ensure Budget Overview and Categories empty states and Tax guided state are consistent with spec (FR-DASH-005, FR-BUDGET-014, FR-TAX-018)
 
 **Checkpoint**: User Story 5 complete. Year selector drives all views; empty and guided states correct.
@@ -186,7 +186,7 @@
 
 - [ ] T064 [P] Add unit tests for frontend business logic (budget totals, year handling) to reach ≥70% coverage for business logic; tests/unit/frontend/
 - [ ] T065 [P] Add unit tests for API services (tax calculation, budget summary) to reach ≥70% coverage; tests/unit/api/
-- [ ] T066 Implement design system: Atlanta Falcons palette (theme-dark.css, theme-light.css), WCAG 2.1 AA contrast, touch targets ≥44px; frontend/src/css/
+- [ ] T066 Implement design system: Atlanta Falcons palette (theme-dark.css, theme-light.css), WCAG 2.1 AA contrast, touch targets ≥44px; src/frontend/src/css/
 - [ ] T067 Add loading states for data-dependent screens (Dashboard, Budget, Tax, Income); skeleton or spinner per NFR-REL-005
 - [ ] T068 Add error states and user-friendly messages with retry for API failures; no broken/blank screens per NFR-REL-004
 - [ ] T069 Form validation: required fields, non-negative amounts, inline errors per NFR-USE-002; frontend forms
@@ -265,4 +265,4 @@
 - [P] = parallelizable (different files, no blocking dependencies).
 - [USn] = task belongs to User Story n for traceability.
 - Each user story phase is independently testable per spec.
-- File paths follow plan.md: frontend/src/, api/src/, tests/unit/frontend/, tests/unit/api/.
+- File paths follow plan.md: src/frontend/src/, src/api/src/, tests/unit/frontend/, tests/unit/api/.

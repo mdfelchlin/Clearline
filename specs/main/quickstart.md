@@ -17,7 +17,7 @@ How to run the Clearline app locally after implementation. Adjust paths if the r
 
 ## Environment
 
-Copy `.env.example` to `.env` (or `.env.local`) in repo root or in `frontend/` and `api/` as needed. Set at least:
+Copy `.env.example` to `.env` (or `.env.local`) in repo root or in `src/frontend/` and `src/api/` as needed. Set at least:
 
 - `SUPABASE_URL` — Supabase project URL  
 - `SUPABASE_ANON_KEY` — Supabase anon key  
@@ -34,7 +34,7 @@ For API base URL from frontend:
 ## Run frontend
 
 ```bash
-cd frontend
+cd src/frontend
 npm install
 npm run dev
 ```
@@ -49,7 +49,7 @@ npm run dev
 If API is a separate Node server (Express/Fastify):
 
 ```bash
-cd api
+cd src/api
 npm install
 npm run dev
 ```
@@ -63,7 +63,7 @@ If API is Vercel serverless, use `vercel dev` from repo root so both frontend an
 
 ## Vite proxy (optional)
 
-To avoid CORS during local dev, in `frontend/vite.config.ts`:
+To avoid CORS during local dev, in `src/frontend/vite.config.ts`:
 
 ```ts
 export default defineConfig({

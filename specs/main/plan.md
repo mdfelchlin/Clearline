@@ -12,7 +12,7 @@ Build the Clearline MVP as a single responsive web app: React (TypeScript + Vite
 **Language/Version**: TypeScript (strict); Node.js LTS; React 18+  
 **Primary Dependencies**: React, Vite, React Router, TanStack Query (or React Context), Supabase client (`@supabase/supabase-js`). Backend: Express or Fastify or Vercel serverless; Zod or Joi for validation; Pino or structured logging.  
 **Storage**: Supabase (PostgreSQL). Schema per PRD §6.2; migrations via Supabase migrations or SQL.  
-**Testing**: Vitest (or Jest) for frontend/API unit tests; React Testing Library for components; ≥70% coverage for business logic (constitution).  
+**Testing**: Vitest (or Jest) for src/frontend and src/api unit tests; React Testing Library for components; ≥70% coverage for business logic (constitution).  
 **Target Platform**: Web (responsive 360px–2560px); Chrome, Firefox, Safari, Edge (latest 2); modern mobile browsers.  
 **Project Type**: Web application (frontend SPA + backend API).  
 **Performance Goals**: Page load < 2s; mobile screens < 1.5s; DB queries < 500ms p95; 100 concurrent users (NFR-PERF-001–004).  
@@ -53,63 +53,64 @@ specs/main/
 ### Source Code (repository root)
 
 ```text
-frontend/
-├── public/
-│   ├── index.html
-│   └── favicon.ico
-├── src/
-│   ├── index.tsx
-│   ├── App.tsx
-│   ├── css/
-│   │   ├── app.css
-│   │   ├── theme-dark.css
-│   │   └── theme-light.css
-│   ├── pages/
-│   │   ├── Dashboard.tsx
-│   │   ├── auth/
-│   │   │   ├── Login.tsx
-│   │   │   └── GoogleCallback.tsx
-│   │   ├── budget/
-│   │   │   ├── BudgetOverview.tsx
-│   │   │   ├── BudgetCategories.tsx
-│   │   │   └── Income.tsx
-│   │   ├── tax/
-│   │   │   └── TaxDashboard.tsx
-│   │   └── settings/
-│   │       └── Settings.tsx
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── MainLayout.tsx
-│   │   │   ├── Sidebar.tsx
-│   │   │   └── UserArea.tsx
-│   │   └── (ChartComponent, etc.)
-│   ├── services/
-│   │   ├── api.ts
-│   │   ├── authService.ts
-│   │   ├── budgetService.ts
-│   │   └── taxService.ts
-│   ├── hooks/
-│   ├── context/
-│   ├── types/
-│   └── utils/
-├── package.json
-├── vite.config.ts
-└── tsconfig.json
-
-api/
-├── src/
-│   ├── routes/
-│   │   ├── auth.ts
-│   │   ├── accounts.ts
-│   │   ├── budgets.ts
-│   │   └── tax.ts
-│   ├── middleware/
-│   │   └── auth.ts
-│   ├── services/
-│   └── lib/
-│       └── supabase.ts
-├── package.json
-└── tsconfig.json
+src/
+├── frontend/
+│   ├── public/
+│   │   ├── index.html
+│   │   └── favicon.ico
+│   ├── src/
+│   │   ├── index.tsx
+│   │   ├── App.tsx
+│   │   ├── css/
+│   │   │   ├── app.css
+│   │   │   ├── theme-dark.css
+│   │   │   └── theme-light.css
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── auth/
+│   │   │   │   ├── Login.tsx
+│   │   │   │   └── GoogleCallback.tsx
+│   │   │   ├── budget/
+│   │   │   │   ├── BudgetOverview.tsx
+│   │   │   │   ├── BudgetCategories.tsx
+│   │   │   │   └── Income.tsx
+│   │   │   ├── tax/
+│   │   │   │   └── TaxDashboard.tsx
+│   │   │   └── settings/
+│   │   │       └── Settings.tsx
+│   │   ├── components/
+│   │   │   ├── layout/
+│   │   │   │   ├── MainLayout.tsx
+│   │   │   │   ├── Sidebar.tsx
+│   │   │   │   └── UserArea.tsx
+│   │   │   └── (ChartComponent, etc.)
+│   │   ├── services/
+│   │   │   ├── api.ts
+│   │   │   ├── authService.ts
+│   │   │   ├── budgetService.ts
+│   │   │   └── taxService.ts
+│   │   ├── hooks/
+│   │   ├── context/
+│   │   ├── types/
+│   │   └── utils/
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── tsconfig.json
+│
+└── api/
+    ├── src/
+    │   ├── routes/
+    │   │   ├── auth.ts
+    │   │   ├── accounts.ts
+    │   │   ├── budgets.ts
+    │   │   └── tax.ts
+    │   ├── middleware/
+    │   │   └── auth.ts
+    │   ├── services/
+    │   └── lib/
+    │       └── supabase.ts
+    ├── package.json
+    └── tsconfig.json
 
 tests/
 ├── unit/
@@ -119,7 +120,7 @@ tests/
 └── contract/
 ```
 
-**Structure Decision**: Web application with separate `frontend/` and `api/` directories. Frontend deployed to Vercel as static/Vite build; API as Vercel Serverless Functions under `/api/*` or single Node server. Same repo; single deployment unit. See [quickstart.md](./quickstart.md) for run instructions.
+**Structure Decision**: All application code under **`src/`**: `src/frontend/` (Vite/React) and `src/api/` (Node API). Frontend deployed to Vercel as static/Vite build; API as Vercel Serverless Functions under `/api/*` or single Node server. Same repo; single deployment unit. See [quickstart.md](./quickstart.md) for run instructions.
 
 ## Complexity Tracking
 

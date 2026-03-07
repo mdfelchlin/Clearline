@@ -73,7 +73,7 @@ Clearline/
 └── .cursor/              # Cursor slash commands (/speckit.*)
 ```
 
-Code (e.g. `frontend/`, `backend/` or `src/`) will appear as features are implemented via `/speckit.implement`.
+Code lives under `src/` (e.g. `src/frontend/`, `src/api/`) and appears as features are implemented via `/speckit.implement`.
 
 ---
 
