@@ -1,50 +1,56 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Clearline Constitution
+
+Governing principles and constraints for Spec-Driven Development of Clearline. All specs, plans, tasks, and implementation must align with this document. Source: [Clearline.md](../Clearline.md) (PRD).
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Product-First and Single Source of Truth
+- **Income is the single source of truth** for both Budget and Tax. Users enter income once on the Income page; Budget totals and Tax calculations read from it. No duplicate income entry in the Tax module.
+- **Budget-derived deductions** are read-only in Tax; tax-only deductions and credits are managed in the Tax module. Specifications and implementation must preserve these boundaries.
+- Features must serve the PRD goals: simplify tax preparation, clear estimated tax bill, household transparency, premium UX (dark/light theme, responsive).
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Technology Stack (Non-Negotiable for MVP)
+- **Frontend:** React with TypeScript, Vite (or equivalent). State: React Context and/or React Query; routing: React Router. One responsive web app for computer and phone.
+- **Backend:** Node.js (LTS), Express or Fastify or Vercel Serverless Functions, TypeScript. RESTful API with versioning (e.g. `/api/v1`).
+- **Database:** Supabase (PostgreSQL). Schema and migrations per PRD §6.2; use Supabase migrations or SQL.
+- **Hosting:** Vercel for frontend and API; Supabase for database and auth. Minimize cost (free tiers where possible).
+- **Auth:** Google OAuth 2.0 for production; email sign-in for test/development. First user becomes account owner; invitations via `account_invitations` with token and expiry.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Quality and Testing
+- **Unit test coverage:** Business logic must have ≥ 70% unit test coverage (NFR-MAINT-002). Plan and tasks must include test tasks for core logic.
+- **API versioning** for backward compatibility (NFR-MAINT-003). Database changes via migrations only (NFR-MAINT-004).
+- Tax calculation logic must be testable against IRS/WA rules; include validation scenarios where applicable.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. User Experience and Accessibility
+- **Responsive and cross-device:** Same features and flows on computer and phone (NFR-USE-007). No desktop-only or mobile-only features. Touch targets ≥ 44×44px on phone; no horizontal scroll for primary content (NFR-USE-008, NFR-USE-009).
+- **Accessibility:** Color contrast WCAG 2.1 AA (min 4.5:1 for text) in both dark and light themes (NFR-USE-004). Semantic colors consistent across themes (NFR-USE-006).
+- **Forms:** Inline validation, clear error messages, required fields indicated. Monetary amounts non-negative unless explicitly supported (NFR-USE-002). Loading and error states on data-dependent screens (NFR-REL-004, NFR-REL-005).
+- **Navigation:** ≤ 3 clicks to any feature (NFR-USE-003). Design system: Atlanta Falcons–inspired palette and typography per PRD §7.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Security and Reliability
+- **Security:** TLS 1.3 in transit; encryption at rest (AES-256). Auth tokens expire per policy (e.g. 24h). Sensitive financial data must not be logged (NFR-SEC-001–006). API endpoints require authentication; rate limiting on auth (e.g. max 5 failed logins per 15 min).
+- **Reliability:** Graceful error handling; user-friendly messages and retry on API failure. No broken or blank screens (NFR-REL-004). Use Vercel/Supabase SLAs and backups where available (NFR-REL-001–003).
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Performance and Scale
+- **Performance:** Page load < 2 s on standard broadband; mobile screens < 1.5 s; DB queries < 500 ms p95 (NFR-PERF-001–003). Support 100 concurrent users without degradation (NFR-PERF-004).
+- **Scope:** One responsive codebase; support Chrome, Firefox, Safari, Edge (latest 2 versions) and modern mobile browsers (NFR-COMP-001–003).
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## Additional Constraints
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- **State support:** Washington (WA) only at launch. Data model and tax logic must be extensible for additional states (state_code, state-specific rules) without core schema redesign.
+- **Currency:** USD only for MVP; no multi-currency. Display and input use dollar formatting (e.g. $1,234.56).
+- **Tax disclaimer:** App is for estimation only; users are responsible for verifying with a tax professional. Implementation must not imply otherwise.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Development Workflow
+
+- **Spec-Driven Development:** Follow the spec-kit workflow: constitution (this file) → specify → plan → tasks → implement. Reference Clearline.md for full requirements; specs summarize and cite requirement IDs (e.g. FR-AUTH-000, FR-BUDGET-INCOME-001).
+- **Code style:** Node.js/TypeScript and React/TypeScript best practices (NFR-MAINT-001). Prefer clarity and maintainability; avoid over-engineering. Justify any constitution exception in plan or PR.
+- **Feature scope:** MVP scope is defined by PRD §8 (Phases 1–5) and §10.1 (MVP launch criteria). Out-of-scope or future work must be explicitly deferred.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes ad-hoc preferences for spec, plan, and implementation decisions. When in doubt, resolve by referring to Clearline.md and this document.
+- Amendments require updating this file and documenting the change (version/date). Implementation and specs must stay consistent with the amended constitution.
+- All plan and task generation must pass a constitution check: stack, NFRs, and principles above must be satisfied or explicitly justified (e.g. in plan’s Complexity Tracking).
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version:** 1.0.0 | **Ratified:** 2026-03-07 | **Last Amended:** 2026-03-07
