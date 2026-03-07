@@ -1,0 +1,35 @@
+﻿---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+# Clearline Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-03-06
+
+## Active Technologies
+
+- TypeScript (strict); Node.js LTS; React 18+ + React, Vite, React Router, TanStack Query (or React Context), Supabase client (`@supabase/supabase-js`). Backend: Express or Fastify or Vercel serverless; Zod or Joi for validation; Pino or structured logging. (main)
+
+## Project Structure
+
+```text
+backend/
+frontend/
+tests/
+```
+
+## Commands
+
+npm test; npm run lint
+
+## Code Style
+
+TypeScript (strict); Node.js LTS; React 18+: Follow standard conventions
+
+## Recent Changes
+
+- main: Added TypeScript (strict); Node.js LTS; React 18+ + React, Vite, React Router, TanStack Query (or React Context), Supabase client (`@supabase/supabase-js`). Backend: Express or Fastify or Vercel serverless; Zod or Joi for validation; Pino or structured logging.
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->
