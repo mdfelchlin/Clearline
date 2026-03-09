@@ -1,0 +1,19 @@
+{
+  "name": "clearline",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix src/frontend",
+    "dev:api": "npm run dev --prefix src/api",
+    "build:frontend": "npm run build --prefix src/frontend",
+    "build:api": "npm run build --prefix src/api",
+    "test": "npm run test:api && npm run test:frontend",
+    "test:api": "vitest run --config tests/unit/api/vitest.config.ts tests/unit/api",
+    "test:frontend": "vitest run --config src/frontend/vite.config.ts tests/unit/frontend",
+    "lint": "npm run lint --prefix src/frontend && npm run lint --prefix src/api",
+    "install:all": "npm install --prefix src/frontend && npm install --prefix src/api"
+  },
+  "devDependencies": {
+    "vitest": "^1.4.0"
+  }
+}
