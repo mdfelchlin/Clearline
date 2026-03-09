@@ -6,7 +6,7 @@ import { budgetService } from '../../services/budgetService'
 import { IncomeSource, IncomeType, IncomeStatus } from '../../types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Dropdown } from '../../components/ui/Dropdown'
+import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
@@ -106,11 +106,11 @@ function IncomeForm({ initial, onSubmit, onCancel, loading }: IncomeFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <Dropdown
+      <Select
         label="Income type"
         required
         value={form.type}
-        onChange={(v) => setForm({ ...form, type: v as IncomeType })}
+        onChange={(e) => setForm({ ...form, type: e.target.value as IncomeType })}
         options={Object.entries(INCOME_TYPE_LABELS).map(([v, l]) => ({ value: v, label: l }))}
       />
       <Input
@@ -130,10 +130,10 @@ function IncomeForm({ initial, onSubmit, onCancel, loading }: IncomeFormProps) {
         step="0.01"
         error={errors.amount}
       />
-      <Dropdown
+      <Select
         label="Status"
         value={form.status}
-        onChange={(v) => setForm({ ...form, status: v as IncomeStatus })}
+        onChange={(e) => setForm({ ...form, status: e.target.value as IncomeStatus })}
         options={[
           { value: 'Expected', label: 'Expected (estimate)' },
           { value: 'Official', label: 'Official (confirmed)' },

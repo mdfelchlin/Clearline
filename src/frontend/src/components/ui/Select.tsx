@@ -1,44 +1,49 @@
 import React from 'react'
+import { Dropdown } from './Dropdown'
 
-interface SelectOption {
+export interface SelectOption {
   value: string
   label: string
 }
 
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
   label?: string
   error?: string
   options: SelectOption[]
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void
 }
 
-export function Select({ label, error, options, id, className = '', ...props }: SelectProps) {
-  const selectId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
+/**
+ * Shared dropdown that matches the budget year selector style (trigger + panel).
+ * Uses a custom dropdown list instead of the native select menu.
+ */
+export function Select({
+  label,
+  error,
+  options,
+  value = '',
+  onChange,
+  id,
+  className,
+  required,
+  disabled,
+  ...rest
+}: SelectProps) {
+  const selectId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
 
   return (
-    <div className="form-field">
-      {label && (
-        <label htmlFor={selectId} className="form-label">
-          {label}
-          {props.required && <span className="form-required" aria-hidden="true"> *</span>}
-        </label>
-      )}
-      <select
-        {...props}
-        id={selectId}
-        className={`form-select ${error ? 'form-input-error' : ''} ${className}`}
-        aria-invalid={!!error}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      {error && (
-        <span className="form-error" role="alert">
-          {error}
-        </span>
-      )}
-    </div>
+    <Dropdown
+      label={label}
+      error={error}
+      required={required}
+      disabled={disabled}
+      options={options}
+      value={String(value ?? '')}
+      onChange={(v) =>
+        onChange?.({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>)
+      }
+      id={selectId}
+      aria-label={rest['aria-label']}
+    />
   )
 }

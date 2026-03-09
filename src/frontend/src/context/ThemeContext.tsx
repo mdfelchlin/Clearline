@@ -41,7 +41,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = async (newTheme: Theme) => {
     setThemeState(newTheme)
     try {
-      await authService.updatePreferences({ theme: newTheme })
+      // API only stores resolved theme (light/dark); 'system' is client-only
+      await authService.updatePreferences({ theme: resolveTheme(newTheme) })
     } catch {
       // Persist locally even if API fails
     }
