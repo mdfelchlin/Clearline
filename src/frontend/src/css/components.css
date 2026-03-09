@@ -201,8 +201,6 @@
   height: 28px;
   width: auto;
   object-fit: contain;
-  filter: brightness(0) invert(1);
-  white-space: nowrap;
   overflow: hidden;
   opacity: 1;
   transition: opacity 0.15s ease, width 0.22s ease;
