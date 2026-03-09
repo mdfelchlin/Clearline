@@ -24,7 +24,7 @@ export function Select({
   value = '',
   onChange,
   id,
-  className,
+  className: _className,
   required,
   disabled,
   ...rest

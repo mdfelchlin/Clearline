@@ -152,12 +152,34 @@ router.get('/:year/income', requireAuth, async (req: AuthenticatedRequest, res: 
   }
 })
 
+async function validateStockIdIfNeeded(
+  accountId: string,
+  type: string,
+  typeSpecificData: Record<string, unknown> | undefined,
+  res: Response
+): Promise<boolean> {
+  const stockId = typeSpecificData?.stock_id
+  if ((type !== 'RSU' && type !== 'ESPP') || typeof stockId !== 'string') return true
+  const { data: stock, error } = await supabase
+    .from('stocks')
+    .select('id')
+    .eq('id', stockId)
+    .eq('account_id', accountId)
+    .single()
+  if (error || !stock) {
+    res.status(400).json({ error: 'Invalid or unknown stock for this account' })
+    return false
+  }
+  return true
+}
+
 router.post('/:year/income', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const incomeData = incomeSchema.parse(req.body)
+    if (!(await validateStockIdIfNeeded(req.user!.accountId, incomeData.type, incomeData.type_specific_data, res))) return
     const budgetId = await getOrCreateBudget(req.user!.accountId, year)
 
     const { data, error } = await supabase
@@ -181,10 +203,18 @@ router.put('/:year/income/:id', requireAuth, async (req: AuthenticatedRequest, r
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const incomeData = incomeSchema.partial().parse(req.body)
-
     const { data: budget } = await supabase
       .from('budgets').select('id').eq('account_id', req.user!.accountId).eq('year', year).single()
     if (!budget) { res.status(404).json({ error: 'Budget not found' }); return }
+    const { data: existing } = await supabase
+      .from('budget_income_sources')
+      .select('type, type_specific_data')
+      .eq('id', req.params.id)
+      .eq('budget_id', budget.id)
+      .single()
+    const type = incomeData.type ?? existing?.type
+    const typeSpecificData = incomeData.type_specific_data ?? existing?.type_specific_data as Record<string, unknown> | undefined
+    if (type && !(await validateStockIdIfNeeded(req.user!.accountId, type, typeSpecificData, res))) return
 
     const { data, error } = await supabase
       .from('budget_income_sources')

@@ -844,6 +844,7 @@
 .income-item-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .income-item-type { font-weight: 600; }
 .income-item-desc { color: var(--color-text-secondary); font-size: 0.875rem; }
+.income-item-ticker { color: var(--color-text-secondary); font-size: 0.8125rem; }
 .income-item-right { display: flex; align-items: center; gap: 12px; }
 .income-item-amount { font-weight: 600; font-size: 1rem; }
 .income-item-actions { display: flex; gap: 4px; }

@@ -50,6 +50,51 @@ export interface IncomeSource {
   type_specific_data?: Record<string, unknown>
 }
 
+/** Type-specific data for RSU/ESPP (stock link + vest/purchase details). Used for form state and API payload. */
+export interface RSUTypeSpecific {
+  stock_id?: string
+  vesting_date?: string
+  shares_vested?: number
+  fmv_per_share?: number
+  sale_date?: string
+  sale_price?: number
+  unvested_shares?: number
+  expected_vesting_date?: string
+}
+
+export interface ESPPTypeSpecific {
+  stock_id?: string
+  purchase_date?: string
+  shares?: number
+  start_price?: number
+  end_price?: number
+  discount_percent?: number
+  sale_date?: string
+  sale_price?: number
+}
+
+export interface W2TypeSpecific {
+  pay_amount?: number
+  frequency?: string
+  start_date?: string
+  end_date?: string
+}
+
+export interface BonusTypeSpecific {
+  payment_date?: string
+  bonus_type?: string
+}
+
+export interface SelfEmployedTypeSpecific {
+  frequency?: string
+  amount_per_period?: number
+}
+
+export interface OtherTypeSpecific {
+  date?: string
+  period?: string
+}
+
 export interface BudgetCategory {
   id: string
   name: string
