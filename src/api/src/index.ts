@@ -38,8 +38,11 @@ app.use('/api/v1/invitations', invitationRoutes)
 app.use(notFoundHandler)
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-  logger.info(`Clearline API running on http://localhost:${PORT}`)
-})
+// Skip listen() when running as a Vercel serverless function
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    logger.info(`Clearline API running on http://localhost:${PORT}`)
+  })
+}
 
 export default app
