@@ -1,46 +1,45 @@
-/* Atlanta Falcons palette — Light theme */
+/* Emerald Finance palette — Light theme */
 [data-theme="light"],
 :root {
-  /* Brand colors (Atlanta Falcons) */
-  --color-primary: #A71930;      /* Falcons Red */
-  --color-primary-hover: #8B1528;
-  --color-primary-light: #FDECEA;
-  --color-accent: #000000;       /* Falcons Black */
-  --color-accent-silver: #C8C9CA; /* Falcons Silver */
+  /* Brand colors */
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
+  --color-primary-light: #D1FAE5;
+  --color-accent: #0F2D27;
 
   /* Backgrounds */
-  --color-bg: #F5F5F5;
+  --color-bg: #F9FAFB;
   --color-bg-surface: #FFFFFF;
-  --color-bg-muted: #F0F0F0;
-  --color-bg-sidebar: #1A1A2E;
-  --color-bg-sidebar-hover: #A71930;
-  --color-bg-sidebar-active: #A71930;
+  --color-bg-muted: #F3F4F6;
+  --color-bg-sidebar: #0F2D27;
+  --color-bg-sidebar-hover: rgba(5, 150, 105, 0.25);
+  --color-bg-sidebar-active: rgba(5, 150, 105, 0.35);
 
   /* Text */
-  --color-text: #1A1A1A;
-  --color-text-secondary: #555555;
-  --color-text-muted: #888888;
+  --color-text: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #9CA3AF;
   --color-text-on-primary: #FFFFFF;
   --color-text-on-sidebar: #FFFFFF;
 
   /* Borders */
-  --color-border: #E0E0E0;
-  --color-border-focus: #A71930;
+  --color-border: #E5E7EB;
+  --color-border-focus: #059669;
 
   /* Status */
-  --color-success: #2E7D32;
-  --color-success-bg: #E8F5E9;
-  --color-warning: #E65100;
-  --color-warning-bg: #FFF3E0;
-  --color-error: #C62828;
-  --color-error-bg: #FFEBEE;
-  --color-info: #1565C0;
-  --color-info-bg: #E3F2FD;
+  --color-success: #059669;
+  --color-success-bg: #D1FAE5;
+  --color-warning: #D97706;
+  --color-warning-bg: #FEF3C7;
+  --color-error: #DC2626;
+  --color-error-bg: #FEE2E2;
+  --color-info: #2563EB;
+  --color-info-bg: #DBEAFE;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10);
 
   /* Spacing & layout */
   --sidebar-width: 240px;

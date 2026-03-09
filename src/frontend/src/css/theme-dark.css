@@ -1,39 +1,38 @@
-/* Atlanta Falcons palette — Dark theme */
+/* Emerald Finance palette — Dark theme */
 [data-theme="dark"] {
-  /* Brand colors (Atlanta Falcons) */
-  --color-primary: #E63950;      /* Lighter red for dark mode */
-  --color-primary-hover: #A71930;
-  --color-primary-light: #3D0A14;
+  /* Brand colors */
+  --color-primary: #34D399;
+  --color-primary-hover: #059669;
+  --color-primary-light: #064E3B;
   --color-accent: #FFFFFF;
-  --color-accent-silver: #C8C9CA;
 
   /* Backgrounds */
-  --color-bg: #121212;
-  --color-bg-surface: #1E1E1E;
-  --color-bg-muted: #2A2A2A;
-  --color-bg-sidebar: #0D0D0D;
-  --color-bg-sidebar-hover: #A71930;
-  --color-bg-sidebar-active: #A71930;
+  --color-bg: #0D1117;
+  --color-bg-surface: #161B22;
+  --color-bg-muted: #21262D;
+  --color-bg-sidebar: #0A1F1B;
+  --color-bg-sidebar-hover: rgba(52, 211, 153, 0.15);
+  --color-bg-sidebar-active: rgba(52, 211, 153, 0.22);
 
   /* Text */
-  --color-text: #E8E8E8;
-  --color-text-secondary: #AAAAAA;
-  --color-text-muted: #666666;
-  --color-text-on-primary: #FFFFFF;
+  --color-text: #E6EDF3;
+  --color-text-secondary: #8B949E;
+  --color-text-muted: #6E7681;
+  --color-text-on-primary: #0D1117;
   --color-text-on-sidebar: #FFFFFF;
 
   /* Borders */
-  --color-border: #333333;
-  --color-border-focus: #E63950;
+  --color-border: #30363D;
+  --color-border-focus: #34D399;
 
   /* Status */
-  --color-success: #66BB6A;
-  --color-success-bg: #1B3A1C;
-  --color-warning: #FFA726;
-  --color-warning-bg: #3E2700;
-  --color-error: #EF5350;
+  --color-success: #3FB950;
+  --color-success-bg: #0D2F18;
+  --color-warning: #D29922;
+  --color-warning-bg: #2D1B00;
+  --color-error: #F85149;
   --color-error-bg: #3D0000;
-  --color-info: #42A5F5;
+  --color-info: #58A6FF;
   --color-info-bg: #0D2A4E;
 
   /* Shadows */

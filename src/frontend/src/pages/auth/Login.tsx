@@ -90,7 +90,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <span className="auth-logo-text">Clearline</span>
+          <img src="/clearline-logo.png" alt="Clearline" className="auth-logo-img" />
         </div>
 
         <div className="auth-tabs">

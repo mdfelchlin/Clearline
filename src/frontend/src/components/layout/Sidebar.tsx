@@ -17,7 +17,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <nav className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-logo">
-        <span className="sidebar-logo-text">Clearline</span>
+        <img src="/clearline-logo.png" alt="Clearline" className="sidebar-logo-img" />
       </div>
       <ul className="sidebar-nav" role="list">
         {navItems.map((item) => (
