@@ -4,9 +4,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
   hint?: string
+  suffix?: React.ReactNode
 }
 
-export function Input({ label, error, hint, id, className = '', ...props }: InputProps) {
+export function Input({ label, error, hint, suffix, id, className = '', ...props }: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
 
   return (
@@ -17,13 +18,16 @@ export function Input({ label, error, hint, id, className = '', ...props }: Inpu
           {props.required && <span className="form-required" aria-hidden="true"> *</span>}
         </label>
       )}
-      <input
-        {...props}
-        id={inputId}
-        className={`form-input ${error ? 'form-input-error' : ''} ${className}`}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
-      />
+      <div className={suffix ? 'form-input-wrapper' : undefined}>
+        <input
+          {...props}
+          id={inputId}
+          className={`form-input ${error ? 'form-input-error' : ''} ${suffix ? 'form-input-has-suffix' : ''} ${className}`}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+        />
+        {suffix && <div className="form-input-suffix">{suffix}</div>}
+      </div>
       {error && (
         <span id={`${inputId}-error`} className="form-error" role="alert">
           {error}
