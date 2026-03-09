@@ -13,24 +13,9 @@
     "lint": "npm run lint --prefix src/frontend && npm run lint --prefix src/api",
     "install:all": "npm install --prefix src/frontend && npm install --prefix src/api"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.99.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.3.1",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.3.1",
-    "pino": "^10.3.1",
-    "pino-http": "^11.0.0",
-    "pino-pretty": "^13.1.3",
-    "zod": "^3.25.76"
-  },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.6",
-    "@types/node": "^22.15.3",
     "@vitest/coverage-v8": "^4.0.18",
     "happy-dom": "^20.8.3",
-    "typescript": "^5.8.3",
     "vitest": "^4.0.18"
   }
 }
