@@ -17,6 +17,7 @@ export function YearProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useYear(): YearContextValue {
   const ctx = useContext(YearContext)
   if (!ctx) throw new Error('useYear must be used within YearProvider')
