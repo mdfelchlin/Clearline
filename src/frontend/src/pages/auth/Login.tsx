@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { authService } from '../../services/authService'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
+import { Logo } from '../../components/ui/Logo'
 import { ApiError } from '../../services/api'
 
 type Mode = 'signin' | 'signup' | 'magic'
@@ -90,7 +91,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <img src="/clearline-logo.png" alt="Clearline" className="auth-logo-img" />
+          <Logo variant="auth" />
         </div>
 
         <div className="auth-tabs">

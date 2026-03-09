@@ -197,15 +197,35 @@
   align-items: center;
   flex-shrink: 0;
 }
-.sidebar-logo-img {
-  height: 28px;
-  width: auto;
-  object-fit: contain;
-  overflow: hidden;
-  opacity: 1;
-  transition: opacity 0.15s ease, width 0.22s ease;
+/* Sidebar logo (SVG-based) */
+.logo-icon--sidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  flex-shrink: 0;
+  color: #fff;
 }
-.sidebar--collapsed .sidebar-logo-img { opacity: 0; width: 0; }
+.logo-wordmark--sidebar {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  margin-left: 10px;
+  opacity: 1;
+  max-width: 160px;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.22s ease, margin 0.22s ease;
+}
+.sidebar--collapsed .logo-wordmark--sidebar {
+  opacity: 0;
+  max-width: 0;
+  margin-left: 0;
+}
 
 .sidebar-footer {
   border-top: 1px solid rgba(255,255,255,0.1);
@@ -361,8 +381,32 @@
   max-width: 420px;
   box-shadow: var(--shadow-lg);
 }
-.auth-logo { text-align: center; margin-bottom: 24px; }
-.auth-logo-img { height: 48px; width: auto; object-fit: contain; }
+.auth-logo { text-align: center; margin-bottom: 32px; }
+.logo-auth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.logo-icon--auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: var(--color-accent);
+  border-radius: 14px;
+  color: #fff;
+}
+.logo-wordmark--auth {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  letter-spacing: -0.5px;
+}
+/* Dark mode: lighten the auth logo icon background */
+[data-theme="dark"] .logo-icon--auth { background: #1A4A3A; }
+[data-theme="dark"] .logo-wordmark--auth { color: var(--color-text); }
 .auth-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
 .auth-subtitle { color: var(--color-text-secondary); margin-bottom: 24px; font-size: 0.9rem; }
 .auth-form { display: flex; flex-direction: column; }
