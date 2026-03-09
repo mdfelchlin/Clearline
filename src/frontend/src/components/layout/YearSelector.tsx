@@ -1,25 +1,71 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { ChevronDown, Plus, Check } from 'lucide-react'
 import { useYear } from '../../context/YearContext'
 import { budgetService } from '../../services/budgetService'
 
-const MIN_YEAR = 2016
-const MAX_YEAR = 2036
+const CURRENT_YEAR = new Date().getFullYear()
+const MIN_YEAR = 2010
+const MAX_YEAR = 2040
 
-function getAvailableYears(): number[] {
-  const years: number[] = []
-  for (let y = MIN_YEAR; y <= MAX_YEAR; y++) {
-    years.push(y)
-  }
-  return years
+function loadActiveYears(): number[] {
+  try {
+    const stored = localStorage.getItem('active-years')
+    if (stored) {
+      const parsed = JSON.parse(stored) as number[]
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed.sort((a, b) => b - a)
+    }
+  } catch { /* ignore */ }
+  return [CURRENT_YEAR]
+}
+
+function saveActiveYears(years: number[]) {
+  try { localStorage.setItem('active-years', JSON.stringify(years)) } catch { /* ignore */ }
 }
 
 export function YearSelector() {
   const { selectedYear, setSelectedYear } = useYear()
-  const [showAddYear, setShowAddYear] = useState(false)
-  const [addYearValue, setAddYearValue] = useState(String(new Date().getFullYear()))
+  const [open, setOpen] = useState(false)
+  const [activeYears, setActiveYears] = useState<number[]>(loadActiveYears)
+  const [showAddInput, setShowAddInput] = useState(false)
+  const [addYearValue, setAddYearValue] = useState(String(CURRENT_YEAR))
   const [adding, setAdding] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const addInputRef = useRef<HTMLInputElement>(null)
 
-  const years = getAvailableYears()
+  useEffect(() => {
+    if (!activeYears.includes(selectedYear)) {
+      const updated = [...activeYears, selectedYear].sort((a, b) => b - a)
+      setActiveYears(updated)
+      saveActiveYears(updated)
+    }
+  }, [selectedYear, activeYears])
+
+  useEffect(() => {
+    if (showAddInput) addInputRef.current?.focus()
+  }, [showAddInput])
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setShowAddInput(false)
+      }
+    }
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setOpen(false); setShowAddInput(false) }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('keydown', handleEsc)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [])
+
+  const handleSelectYear = (y: number) => {
+    setSelectedYear(y)
+    setOpen(false)
+  }
 
   const handleAddYear = async () => {
     const y = parseInt(addYearValue, 10)
@@ -27,59 +73,88 @@ export function YearSelector() {
     setAdding(true)
     try {
       await budgetService.createBudget(y)
+    } catch { /* may already exist */ } finally {
+      const updated = [...new Set([...activeYears, y])].sort((a, b) => b - a)
+      setActiveYears(updated)
+      saveActiveYears(updated)
       setSelectedYear(y)
-      setShowAddYear(false)
-    } catch {
-      // Year may already exist
-      setSelectedYear(y)
-      setShowAddYear(false)
-    } finally {
+      setShowAddInput(false)
+      setOpen(false)
       setAdding(false)
     }
   }
 
   return (
-    <div className="year-selector">
-      <select
-        value={selectedYear}
-        onChange={(e) => {
-          const val = e.target.value
-          if (val === '__add__') {
-            setShowAddYear(true)
-          } else {
-            setSelectedYear(parseInt(val, 10))
-          }
-        }}
-        className="year-select"
+    <div className="year-selector" ref={containerRef}>
+      <button
+        type="button"
+        className="year-trigger"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         aria-label="Select year"
       >
-        {years.map((y) => (
-          <option key={y} value={y}>
-            {y}
-          </option>
-        ))}
-        <option value="__add__">+ Add year</option>
-      </select>
+        <span className="year-trigger-label">{selectedYear}</span>
+        <ChevronDown size={14} strokeWidth={2} className={`year-trigger-chevron${open ? ' year-trigger-chevron--open' : ''}`} />
+      </button>
 
-      {showAddYear && (
-        <div className="year-add-popover">
-          <label htmlFor="add-year-input" className="form-label">Add year</label>
-          <input
-            id="add-year-input"
-            type="number"
-            min={MIN_YEAR}
-            max={MAX_YEAR}
-            value={addYearValue}
-            onChange={(e) => setAddYearValue(e.target.value)}
-            className="form-input"
-            style={{ width: '100px' }}
-          />
-          <button onClick={handleAddYear} disabled={adding} className="btn btn-primary btn-sm">
-            {adding ? 'Adding...' : 'Add'}
-          </button>
-          <button onClick={() => setShowAddYear(false)} className="btn btn-ghost btn-sm">
-            Cancel
-          </button>
+      {open && (
+        <div className="year-dropdown" role="listbox" aria-label="Available years">
+          {activeYears.map((y) => (
+            <button
+              key={y}
+              type="button"
+              role="option"
+              aria-selected={y === selectedYear}
+              className={`year-option${y === selectedYear ? ' year-option--active' : ''}`}
+              onClick={() => handleSelectYear(y)}
+            >
+              <span>{y}</span>
+              {y === selectedYear && <Check size={14} strokeWidth={2.5} />}
+            </button>
+          ))}
+
+          <div className="year-dropdown-divider" />
+
+          {showAddInput ? (
+            <div className="year-add-row">
+              <input
+                ref={addInputRef}
+                type="number"
+                min={MIN_YEAR}
+                max={MAX_YEAR}
+                value={addYearValue}
+                onChange={(e) => setAddYearValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddYear() }}
+                className="year-add-input"
+                aria-label="Year to add"
+              />
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleAddYear}
+                disabled={adding}
+              >
+                {adding ? '…' : 'Add'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowAddInput(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="year-option year-option--add"
+              onClick={() => { setAddYearValue(String(CURRENT_YEAR)); setShowAddInput(true) }}
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              <span>Add year</span>
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -166,7 +166,7 @@ export default function TaxDashboard() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1 className="page-title">Tax Preparation — {selectedYear}</h1>
+        <h1 className="page-title">Tax Preparation</h1>
       </div>
 
       {isEmpty && (
