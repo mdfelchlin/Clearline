@@ -30,6 +30,45 @@ const lineItemSchema = z.object({
 const reorderSchema = z.array(z.object({ id: z.string().uuid(), sort_order: z.number().int() }))
 const moveLineItemSchema = z.object({ target_category_id: z.string().uuid() })
 
+function getFrequencyMultiplier(frequency: string): number {
+  switch (frequency) {
+    case 'Annual': return 1
+    case 'Monthly': return 12
+    case 'SemiMonthly': return 24
+    case 'BiWeekly': return 26
+    case 'Weekly': return 52
+    default: return 0
+  }
+}
+
+function getProrateRatio(startDate: string, endDate: string | undefined, year: number): number {
+  const start = new Date(startDate)
+  const end = endDate ? new Date(endDate) : new Date(year, 11, 31)
+  const yearStart = new Date(year, 0, 1)
+  const yearEnd = new Date(year, 11, 31)
+  const rangeStart = start < yearStart ? yearStart : start
+  const rangeEnd = end > yearEnd ? yearEnd : end
+  if (rangeStart.getTime() > rangeEnd.getTime()) return 0
+  const daysInRange = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
+  const daysInYear = isLeap(year) ? 366 : 365
+  return Math.min(1, Math.max(0, daysInRange / daysInYear))
+}
+
+function computeProratedAnnualAmount(
+  payAmount: number,
+  frequency: string,
+  startDate: string,
+  endDate: string | undefined,
+  year: number
+): number {
+  const multiplier = getFrequencyMultiplier(frequency)
+  if (multiplier <= 0) return 0
+  const fullAnnual = payAmount * multiplier
+  const ratio = getProrateRatio(startDate, endDate, year)
+  return Math.round(fullAnnual * ratio)
+}
+
 async function getOrCreateBudget(accountId: string, year: number) {
   const { data: existing } = await supabase
     .from('budgets')
@@ -182,6 +221,42 @@ router.post('/:year/income', requireAuth, async (req: AuthenticatedRequest, res:
     const incomeData = incomeSchema.parse(req.body)
     if (!(await validateStockIdIfNeeded(req.user!.accountId, incomeData.type, incomeData.type_specific_data, res))) return
     const budgetId = await getOrCreateBudget(req.user!.accountId, year)
+
+    // When adding a W2 with same employer (promotion), close the previous segment so we don't double-count income
+    const newStartDate = incomeData.type === 'W2' && incomeData.description && incomeData.type_specific_data && typeof incomeData.type_specific_data.start_date === 'string'
+      ? (incomeData.type_specific_data.start_date as string)
+      : null
+    if (newStartDate) {
+      const prev = new Date(newStartDate)
+      prev.setDate(prev.getDate() - 1)
+      const endDatePrev = prev.toISOString().slice(0, 10)
+      const { data: existing } = await supabase
+        .from('budget_income_sources')
+        .select('id, amount, type_specific_data')
+        .eq('budget_id', budgetId)
+        .eq('type', 'W2')
+        .eq('description', incomeData.description!.trim())
+      const toClose = (existing ?? []).filter((row) => {
+        const td = row.type_specific_data as Record<string, unknown> | null
+        const end = typeof td?.end_date === 'string' ? td.end_date : null
+        return !end || end >= newStartDate
+      })
+      for (const row of toClose) {
+        const td = (row.type_specific_data as Record<string, unknown>) ?? {}
+        const updatedTd = { ...td, end_date: endDatePrev }
+        const payAmount = typeof td.pay_amount === 'number' ? td.pay_amount : 0
+        const frequency = typeof td.frequency === 'string' ? td.frequency : ''
+        const startDate = typeof td.start_date === 'string' ? td.start_date : ''
+        const proratedAmount = startDate && payAmount > 0 && getFrequencyMultiplier(frequency) > 0
+          ? computeProratedAnnualAmount(payAmount, frequency, startDate, endDatePrev, year)
+          : row.amount ?? 0
+        await supabase
+          .from('budget_income_sources')
+          .update({ type_specific_data: updatedTd, amount: proratedAmount })
+          .eq('id', row.id)
+          .eq('budget_id', budgetId)
+      }
+    }
 
     const { data, error } = await supabase
       .from('budget_income_sources')

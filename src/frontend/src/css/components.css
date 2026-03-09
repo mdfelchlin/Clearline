@@ -829,15 +829,37 @@
 /* ============================================================
    Income List
 ============================================================ */
-.income-summary {
+.income-summary-card {
   display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 16px;
-  font-size: 0.9rem;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  max-width: 320px;
 }
-.income-summary-label { color: var(--color-text-secondary); }
-.income-summary-value { font-weight: 700; color: var(--color-text); font-size: 1.1rem; }
+.income-summary-card-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.income-summary-card-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-success);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.income-summary-card-meta {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
 
 .income-list { display: flex; flex-direction: column; gap: 8px; }
 .income-item {
@@ -858,6 +880,8 @@
 .income-item-right { display: flex; align-items: center; gap: 12px; }
 .income-item-amount { font-weight: 600; font-size: 1rem; }
 .income-item-actions { display: flex; gap: 4px; }
+.income-item-actions--menu .btn-icon { padding: 4px; min-width: 28px; color: var(--color-text-muted); }
+.income-item-actions--menu .btn-icon:hover { color: var(--color-text); }
 
 .income-type-grid {
   display: grid;

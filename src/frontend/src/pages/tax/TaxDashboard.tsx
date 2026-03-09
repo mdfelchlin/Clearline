@@ -173,7 +173,7 @@ export default function TaxDashboard() {
       {isEmpty && (
         <div className="alert alert-info">
           {!hasOfficialIncome ? (
-            <>No Official income for {selectedYear}. <Link to="/income">Mark income as Official</Link> to see tax estimates.</>
+            <>No income for {selectedYear}. <Link to="/income">Add income</Link> to see tax estimates.</>
           ) : (
             <>Set your tax profile below to calculate your estimated tax bill.</>
           )}
@@ -187,7 +187,7 @@ export default function TaxDashboard() {
           <Link to="/income" className="btn btn-ghost btn-sm">Edit income →</Link>
         </div>
         {officialIncome.length === 0 ? (
-          <p className="text-muted">No Official income for {selectedYear}. <Link to="/income">Add income</Link></p>
+          <p className="text-muted">No income for {selectedYear}. <Link to="/income">Add income</Link></p>
         ) : (
           <table className="data-table" aria-label="Income sources">
             <thead>
@@ -349,7 +349,7 @@ export default function TaxDashboard() {
           </div>
         ) : (
           <div className="empty-state">
-            <p>Add Official income to see estimated taxes.</p>
+            <p>Add income to see estimated taxes.</p>
           </div>
         )}
       </section>

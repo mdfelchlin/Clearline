@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { FileText, Gift, TrendingUp, Building2, Briefcase, MoreHorizontal, LucideIcon, Plus } from 'lucide-react'
+import { FileText, Gift, TrendingUp, Building2, Briefcase, MoreHorizontal, MoreVertical, LucideIcon, Plus } from 'lucide-react'
 import { useYear } from '../../context/YearContext'
 import { budgetService } from '../../services/budgetService'
 import { IncomeSource, IncomeType, IncomeStatus, Stock } from '../../types'
@@ -39,14 +40,57 @@ const INCOME_TYPE_DESCRIPTIONS: Record<IncomeType, string> = {
   Other: 'Any other income source',
 }
 
+/** Predefined order for sorting income by type. */
+const INCOME_TYPE_ORDER: IncomeType[] = ['W2', 'Bonus', 'RSU', 'ESPP', 'SelfEmployed', 'Other']
+
 const FREQUENCY_OPTIONS = [
   { value: '', label: 'Select frequency' },
-  { value: 'BiWeekly', label: 'Bi-weekly' },
+  { value: 'Annual', label: 'Annual (salaried)' },
   { value: 'Monthly', label: 'Monthly' },
   { value: 'SemiMonthly', label: 'Semi-monthly' },
+  { value: 'BiWeekly', label: 'Bi-weekly' },
   { value: 'Weekly', label: 'Weekly' },
-  { value: 'Annual', label: 'Annual' },
 ]
+
+function getFrequencyMultiplier(frequency: string): number {
+  switch (frequency) {
+    case 'Annual': return 1
+    case 'Monthly': return 12
+    case 'SemiMonthly': return 24
+    case 'BiWeekly': return 26
+    case 'Weekly': return 52
+    default: return 0
+  }
+}
+
+/** Prorate pay within a budget year. If start is Jan 1 and no end (or end is Dec 31), returns 1. */
+function getProrateRatio(startDate: string, endDate: string | undefined, year: number): number {
+  const start = new Date(startDate)
+  const end = endDate ? new Date(endDate) : new Date(year, 11, 31)
+  const yearStart = new Date(year, 0, 1)
+  const yearEnd = new Date(year, 11, 31)
+  const rangeStart = start < yearStart ? yearStart : start
+  const rangeEnd = end > yearEnd ? yearEnd : end
+  if (rangeStart > rangeEnd) return 0
+  const daysInRange = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  const isLeap = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
+  const daysInYear = isLeap(year) ? 366 : 365
+  return Math.min(1, Math.max(0, daysInRange / daysInYear))
+}
+
+function computeProratedAnnualAmount(
+  payAmount: number,
+  frequency: string,
+  startDate: string,
+  endDate: string | undefined,
+  year: number
+): number {
+  const multiplier = getFrequencyMultiplier(frequency)
+  if (multiplier <= 0) return 0
+  const fullAnnual = payAmount * multiplier
+  const ratio = getProrateRatio(startDate, endDate, year)
+  return Math.round(fullAnnual * ratio)
+}
 
 const BONUS_TYPE_OPTIONS = [
   { value: '', label: 'Select type' },
@@ -136,7 +180,7 @@ const emptyFormState = (type: IncomeType): IncomeFormState => ({
   type,
   description: '',
   amount: '',
-  status: 'Expected',
+  status: 'Official',
   notes: '',
   pay_amount: '',
   frequency: '',
@@ -327,9 +371,11 @@ interface IncomeFormProps {
   onSubmit: (payload: IncomeSubmitPayload) => void
   onCancel: () => void
   loading: boolean
+  selectedYear?: number
+  existingW2Employers?: string[]
 }
 
-function IncomeForm({ type, initial, onSubmit, onCancel, loading }: IncomeFormProps) {
+function IncomeForm({ type, initial, onSubmit, onCancel, loading, selectedYear, existingW2Employers }: IncomeFormProps) {
   const [form, setForm] = useState<IncomeFormState>(initial)
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({})
 
@@ -339,14 +385,33 @@ function IncomeForm({ type, initial, onSubmit, onCancel, loading }: IncomeFormPr
     enabled: type === 'RSU' || type === 'ESPP',
   })
 
+  // When adding W2 and employer matches an existing one, assume promotion and default start to today
+  useEffect(() => {
+    if (type !== 'W2' || !selectedYear || !existingW2Employers?.length) return
+    const employer = form.description.trim()
+    if (!employer || !existingW2Employers.includes(employer)) return
+    const jan1 = `${selectedYear}-01-01`
+    if (form.start_date !== jan1) return
+    const today = new Date().toISOString().slice(0, 10)
+    setForm((prev) => ({ ...prev, start_date: today }))
+  }, [type, selectedYear, existingW2Employers, form.description, form.start_date])
+
   const validate = (): boolean => {
     const e: Partial<Record<string, string>> = {}
-    const amt = form.amount.trim()
-    if (!amt || isNaN(Number(amt)) || Number(amt) < 0) {
-      e.amount = 'Enter a valid amount (0 or greater)'
-    }
-    if (type === 'W2' && form.pay_amount && isNaN(Number(form.pay_amount))) {
-      e.pay_amount = 'Enter a valid pay amount'
+    if (type === 'W2') {
+      if (!form.description.trim()) e.description = 'Employer is required'
+      const payAmt = form.pay_amount.trim()
+      if (!payAmt || isNaN(Number(payAmt)) || Number(payAmt) < 0) e.pay_amount = 'Enter a valid amount'
+      if (!form.frequency) e.frequency = 'Select a pay frequency'
+      if (!form.start_date) e.start_date = 'Start date is required'
+      if (form.end_date && form.start_date && form.end_date < form.start_date) {
+        e.end_date = 'End date must be on or after start date'
+      }
+    } else {
+      const amt = form.amount.trim()
+      if (!amt || isNaN(Number(amt)) || Number(amt) < 0) {
+        e.amount = 'Enter a valid amount (0 or greater)'
+      }
     }
     setErrors(e)
     return Object.keys(e).length === 0
@@ -355,9 +420,20 @@ function IncomeForm({ type, initial, onSubmit, onCancel, loading }: IncomeFormPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    const amount = Number(form.amount) || 0
+    let amount: number
     const description = form.description.trim() || undefined
     const type_specific_data = buildTypeSpecificData(type, form)
+    if (type === 'W2' && selectedYear != null) {
+      amount = computeProratedAnnualAmount(
+        Number(form.pay_amount) || 0,
+        form.frequency,
+        form.start_date,
+        form.end_date || undefined,
+        selectedYear
+      )
+    } else {
+      amount = Number(form.amount) || 0
+    }
     onSubmit({
       type: form.type,
       description,
@@ -371,28 +447,64 @@ function IncomeForm({ type, initial, onSubmit, onCancel, loading }: IncomeFormPr
 
   return (
     <form onSubmit={handleSubmit} noValidate className="income-form">
-      <CurrencyInput
-        label="Annual amount"
-        required
-        value={form.amount}
-        onChange={(v) => set({ amount: v })}
-        error={errors.amount}
-      />
-      {(type === 'W2' || type === 'RSU' || type === 'SelfEmployed' || type === 'Other') && (
-        <Input
-          label={type === 'W2' ? 'Employer name' : type === 'RSU' ? 'Company name' : 'Description'}
-          value={form.description}
-          onChange={(e) => set({ description: e.target.value })}
-          placeholder={type === 'W2' ? 'e.g. Acme Corp' : type === 'RSU' ? 'e.g. Employer' : 'e.g. Consulting'}
-        />
-      )}
-
-      {type === 'W2' && (
+      {type === 'W2' ? (
         <>
-          <CurrencyInput label="Pay amount (per period)" value={form.pay_amount} onChange={(v) => set({ pay_amount: v })} error={errors.pay_amount} />
-          <Select label="Frequency" value={form.frequency} onChange={(e) => set({ frequency: e.target.value })} options={FREQUENCY_OPTIONS} />
-          <Input label="Start date" type="date" value={form.start_date} onChange={(e) => set({ start_date: e.target.value })} />
-          <Input label="End date (optional)" type="date" value={form.end_date} onChange={(e) => set({ end_date: e.target.value })} />
+          <Input
+            label="Employer"
+            required
+            value={form.description}
+            onChange={(e) => set({ description: e.target.value })}
+            placeholder="e.g. Acme Corp"
+            error={errors.description}
+          />
+          <CurrencyInput
+            label="Amount"
+            required
+            value={form.pay_amount}
+            onChange={(v) => set({ pay_amount: v })}
+            error={errors.pay_amount}
+          />
+          <Select
+            label="Pay frequency"
+            required
+            value={form.frequency}
+            onChange={(e) => set({ frequency: e.target.value })}
+            options={FREQUENCY_OPTIONS}
+            error={errors.frequency}
+          />
+          <Input
+            label="Start date"
+            type="date"
+            required
+            value={form.start_date}
+            onChange={(e) => set({ start_date: e.target.value })}
+            error={errors.start_date}
+          />
+          <Input
+            label="End date (optional)"
+            type="date"
+            value={form.end_date}
+            onChange={(e) => set({ end_date: e.target.value })}
+            error={errors.end_date}
+          />
+        </>
+      ) : (
+        <>
+          <CurrencyInput
+            label="Annual amount"
+            required
+            value={form.amount}
+            onChange={(v) => set({ amount: v })}
+            error={errors.amount}
+          />
+          {(type === 'RSU' || type === 'SelfEmployed' || type === 'Other') && (
+            <Input
+              label={type === 'RSU' ? 'Company name' : 'Description'}
+              value={form.description}
+              onChange={(e) => set({ description: e.target.value })}
+              placeholder={type === 'RSU' ? 'e.g. Employer' : 'e.g. Consulting'}
+            />
+          )}
         </>
       )}
 
@@ -453,8 +565,8 @@ function IncomeForm({ type, initial, onSubmit, onCancel, loading }: IncomeFormPr
         value={form.status}
         onChange={(e) => set({ status: e.target.value as IncomeStatus })}
         options={[
-          { value: 'Expected', label: 'Expected (estimate)' },
-          { value: 'Official', label: 'Official (confirmed)' },
+          { value: 'Official', label: 'Actual' },
+          { value: 'Expected', label: 'Estimated (e.g. unknown bonus)' },
         ]}
       />
       <div className="modal-footer">
@@ -474,6 +586,10 @@ export default function IncomePage() {
   const [selectedType, setSelectedType] = useState<IncomeType>('W2')
   const [editTarget, setEditTarget] = useState<IncomeSource | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<IncomeSource | null>(null)
+  const [openIncomeMenuId, setOpenIncomeMenuId] = useState<string | null>(null)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null)
+  const incomeMenuTriggerRef = useRef<HTMLButtonElement>(null)
+  const incomeMenuPortalRef = useRef<HTMLDivElement>(null)
 
   const { data: stocks = [] } = useQuery({
     queryKey: ['stocks'],
@@ -505,6 +621,11 @@ export default function IncomePage() {
     queryKey: ['income', selectedYear],
     queryFn: () => budgetService.getIncome(selectedYear),
   })
+
+  const existingW2Employers = useMemo(
+    () => income?.filter((i) => i.type === 'W2' && i.description).map((i) => i.description!.trim()) ?? [],
+    [income]
+  )
 
   const addMutation = useMutation({
     mutationFn: (data: Parameters<typeof budgetService.addIncome>[1]) =>
@@ -575,6 +696,29 @@ export default function IncomePage() {
     return stock?.ticker_symbol ?? null
   }
 
+  useLayoutEffect(() => {
+    if (!openIncomeMenuId || !incomeMenuTriggerRef.current) {
+      setMenuPosition(null)
+      return
+    }
+    const rect = incomeMenuTriggerRef.current.getBoundingClientRect()
+    setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+  }, [openIncomeMenuId])
+
+  useEffect(() => {
+    if (!openIncomeMenuId) return
+    const handleOutside = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (
+        incomeMenuTriggerRef.current?.contains(target) ||
+        incomeMenuPortalRef.current?.contains(target)
+      ) return
+      setOpenIncomeMenuId(null)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [openIncomeMenuId])
+
   if (isLoading) return <div className="page"><div className="page-header"><h1 className="page-title">Income</h1></div><div className="loading-container"><Spinner size="lg" /></div></div>
   if (error) return <div className="page"><div className="page-header"><h1 className="page-title">Income</h1></div><ErrorMessage message={getErrorMessage(error)} onRetry={refetch} /></div>
 
@@ -603,53 +747,100 @@ export default function IncomePage() {
         </div>
       ) : (
         <>
-          <div className="income-summary">
-            <span className="income-summary-label">Official total:</span>
-            <span className="income-summary-value">{formatCurrency(officialTotal)}</span>
+          <div className="income-summary-card" aria-label={`Income total for ${selectedYear}`}>
+            <span className="income-summary-card-label">Total</span>
+            <span className="income-summary-card-value">{formatCurrency(officialTotal)}</span>
+            <span className="income-summary-card-meta">Income for {selectedYear}</span>
           </div>
           <div className="income-list">
-            {income.map((item) => {
-              const ticker = (item.type === 'RSU' || item.type === 'ESPP') && item.type_specific_data?.stock_id
-                ? getTickerForStockId(String(item.type_specific_data.stock_id))
-                : null
-              return (
-                <div key={item.id} className="income-item">
-                  <div className="income-item-info">
-                    <span className="income-item-type">{INCOME_TYPE_LABELS[item.type]}</span>
-                    {item.description && <span className="income-item-desc">{item.description}</span>}
-                    {ticker && <span className="income-item-ticker">Linked: {ticker}</span>}
-                    <span className={`badge badge-${item.status.toLowerCase()}`}>{item.status}</span>
-                  </div>
-                  <div className="income-item-right">
-                    <span className="income-item-amount">{formatCurrency(item.amount)}</span>
-                    <div className="income-item-actions">
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => openEdit(item)}
-                        aria-label={`Edit ${item.description ?? item.type}`}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => openDuplicate(item)}
-                        aria-label={`Duplicate ${item.description ?? item.type}`}
-                      >
-                        Duplicate
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm btn-danger-ghost"
-                        onClick={() => setDeleteTarget(item)}
-                        aria-label={`Delete ${item.description ?? item.type}`}
-                      >
-                        Delete
-                      </button>
+            {[...(income ?? [])]
+              .sort((a, b) => INCOME_TYPE_ORDER.indexOf(a.type) - INCOME_TYPE_ORDER.indexOf(b.type))
+              .map((item) => {
+                const ticker = (item.type === 'RSU' || item.type === 'ESPP') && item.type_specific_data?.stock_id
+                  ? getTickerForStockId(String(item.type_specific_data.stock_id))
+                  : null
+                return (
+                  <div key={item.id} className="income-item">
+                    <div className="income-item-info">
+                      <span className="income-item-type">{INCOME_TYPE_LABELS[item.type]}</span>
+                      {item.description && <span className="income-item-desc">{item.description}</span>}
+                      {ticker && <span className="income-item-ticker">Linked: {ticker}</span>}
+                      {item.status === 'Expected' && <span className="badge badge-expected">Estimated</span>}
+                    </div>
+                    <div className="income-item-right">
+                      <span className="income-item-amount">{formatCurrency(item.amount)}</span>
+                      <div className="income-item-actions income-item-actions--menu">
+                        <button
+                          ref={openIncomeMenuId === item.id ? incomeMenuTriggerRef : undefined}
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-icon"
+                          onClick={() => setOpenIncomeMenuId((id) => (id === item.id ? null : item.id))}
+                          aria-label={`Actions for ${item.description ?? INCOME_TYPE_LABELS[item.type]}`}
+                          aria-expanded={openIncomeMenuId === item.id}
+                          aria-haspopup="menu"
+                        >
+                          <MoreVertical size={16} strokeWidth={2} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
           </div>
+          {openIncomeMenuId &&
+            menuPosition &&
+            (() => {
+              const menuItem = income?.find((i) => i.id === openIncomeMenuId)
+              if (!menuItem) return null
+              return createPortal(
+                <div
+                  ref={incomeMenuPortalRef}
+                  className="line-item-menu line-item-menu--portal"
+                  role="menu"
+                  style={{
+                    position: 'fixed',
+                    top: menuPosition.top,
+                    right: menuPosition.right,
+                    left: 'auto',
+                  }}
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="line-item-menu-item"
+                    onClick={() => {
+                      openEdit(menuItem)
+                      setOpenIncomeMenuId(null)
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="line-item-menu-item"
+                    onClick={() => {
+                      openDuplicate(menuItem)
+                      setOpenIncomeMenuId(null)
+                    }}
+                  >
+                    Duplicate
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="line-item-menu-item line-item-menu-item--danger"
+                    onClick={() => {
+                      setDeleteTarget(menuItem)
+                      setOpenIncomeMenuId(null)
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>,
+                document.body
+              )
+            })()}
         </>
       )}
 
@@ -664,29 +855,49 @@ export default function IncomePage() {
         ) : (
           <IncomeForm
             type={selectedType}
-            initial={editTarget?.id === '' ? formStateFromIncome(editTarget) : { ...emptyFormState(selectedType), status: 'Expected' }}
+            initial={
+              editTarget?.id === ''
+                ? formStateFromIncome(editTarget)
+                : selectedType === 'W2'
+                  ? { ...emptyFormState(selectedType), start_date: `${selectedYear}-01-01` }
+                  : emptyFormState(selectedType)
+            }
             onSubmit={handleAdd}
             onCancel={closeAddModal}
             loading={addMutation.isPending}
+            selectedYear={selectedYear}
+            existingW2Employers={existingW2Employers}
           />
         )}
       </Modal>
 
-      {editTarget && editTarget.id !== '' && (
-        <Modal
-          isOpen={true}
-          onClose={() => setEditTarget(null)}
-          title="Edit income"
-        >
-          <IncomeForm
-            type={editTarget.type}
-            initial={formStateFromIncome(editTarget)}
-            onSubmit={handleEdit}
-            onCancel={() => setEditTarget(null)}
-            loading={updateMutation.isPending}
-          />
-        </Modal>
-      )}
+      {editTarget && editTarget.id !== '' && (() => {
+        const editInitial = formStateFromIncome(editTarget)
+        if (editTarget.type === 'W2' && !editInitial.start_date && selectedYear) {
+          editInitial.start_date = `${selectedYear}-01-01`
+        }
+        // Exclude this record's employer so we don't treat "edit" as "promotion" and overwrite start_date with today
+        const otherW2Employers = editTarget.type === 'W2' && editTarget.description?.trim()
+          ? existingW2Employers.filter((e) => e !== editTarget.description!.trim())
+          : existingW2Employers
+        return (
+          <Modal
+            isOpen={true}
+            onClose={() => setEditTarget(null)}
+            title="Edit income"
+          >
+            <IncomeForm
+              type={editTarget.type}
+              initial={editInitial}
+              onSubmit={handleEdit}
+              onCancel={() => setEditTarget(null)}
+              loading={updateMutation.isPending}
+              selectedYear={selectedYear}
+              existingW2Employers={otherW2Employers}
+            />
+          </Modal>
+        )
+      })()}
 
       <Modal
         isOpen={deleteTarget !== null}

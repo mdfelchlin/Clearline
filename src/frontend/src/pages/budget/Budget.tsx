@@ -40,7 +40,7 @@ export default function Budget() {
 
       <div className="summary-cards">
         <SummaryCard
-          label="Total Income (Official)"
+          label="Total Income"
           value={formatCurrency(summary?.totalIncome ?? 0)}
           variant="positive"
         />
