@@ -1,10 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Wallet, TrendingUp, Receipt, Settings, ChevronLeft, LucideIcon } from 'lucide-react'
+import { Wallet, TrendingUp, Receipt, Settings, ChevronLeft, LucideIcon } from 'lucide-react'
 import { Logo } from '../ui/Logo'
 
 const navItems: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/budget', label: 'Budget', icon: Wallet },
+  { to: '/', label: 'Budget', icon: Wallet },
   { to: '/income', label: 'Income', icon: TrendingUp },
   { to: '/tax', label: 'Tax', icon: Receipt },
   { to: '/settings', label: 'Settings', icon: Settings },
@@ -19,7 +18,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <nav className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-logo">
-        <Logo variant="sidebar" />
+        <Logo variant="sidebar" collapsed={collapsed} />
       </div>
       <ul className="sidebar-nav" role="list">
         {navItems.map(({ to, label, icon: Icon }) => (

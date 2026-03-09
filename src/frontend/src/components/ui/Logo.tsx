@@ -31,16 +31,17 @@ function GemIcon({ size = 20 }: GemIconProps) {
 
 interface LogoProps {
   variant: 'sidebar' | 'auth'
+  collapsed?: boolean
 }
 
-export function Logo({ variant }: LogoProps) {
+export function Logo({ variant, collapsed = false }: LogoProps) {
   if (variant === 'sidebar') {
     return (
       <>
-        <span className="logo-icon logo-icon--sidebar">
-          <GemIcon size={18} />
+        <span className={`logo-icon logo-icon--sidebar${collapsed ? ' logo-icon--sidebar-collapsed' : ''}`}>
+          <GemIcon size={collapsed ? 22 : 18} />
         </span>
-        <span className="logo-wordmark logo-wordmark--sidebar">Clearline</span>
+        {!collapsed && <span className="logo-wordmark logo-wordmark--sidebar">Clearline</span>}
       </>
     )
   }

@@ -6,7 +6,6 @@ import { YearProvider } from './context/YearContext'
 import { MainLayout } from './components/layout/MainLayout'
 import Login from './pages/auth/Login'
 import GoogleCallback from './pages/auth/GoogleCallback'
-import Dashboard from './pages/Dashboard'
 import Budget from './pages/budget/Budget'
 import IncomePage from './pages/budget/Income'
 import TaxDashboard from './pages/tax/TaxDashboard'
@@ -60,8 +59,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={<Dashboard />} />
-        <Route path="budget" element={<Budget />} />
+        <Route index element={<Budget />} />
         <Route path="income" element={<IncomePage />} />
         <Route path="tax" element={<TaxDashboard />} />
         <Route path="settings" element={<Settings />} />

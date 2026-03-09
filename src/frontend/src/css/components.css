@@ -238,6 +238,10 @@
   align-items: center;
   flex-shrink: 0;
 }
+.sidebar--collapsed .sidebar-logo {
+  padding: 0 12px;
+  justify-content: center;
+}
 /* Sidebar logo (SVG-based) */
 .logo-icon--sidebar {
   display: flex;
@@ -249,6 +253,11 @@
   border-radius: 6px;
   flex-shrink: 0;
   color: #fff;
+}
+.logo-icon--sidebar-collapsed {
+  background: transparent;
+  width: 28px;
+  height: 28px;
 }
 .logo-wordmark--sidebar {
   font-size: 1.1rem;
@@ -1187,9 +1196,3 @@
 .invitations-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .invitation-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 0.875rem; flex-wrap: wrap; }
 
-/* ============================================================
-   Dashboard
-============================================================ */
-.dashboard-tax-summary { margin-top: 24px; }
-.dashboard-tax-nudge { margin-top: 16px; }
-.tax-summary-info { font-size: 0.9rem; margin-top: 8px; }
