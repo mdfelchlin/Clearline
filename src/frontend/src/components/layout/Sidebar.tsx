@@ -8,11 +8,37 @@ const navItems = [
   { to: '/settings', label: 'Settings', icon: '⚙' },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean
+  onToggle: () => void
+}
+
+export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
-    <nav className="sidebar" aria-label="Main navigation">
+    <nav className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`} aria-label="Main navigation">
       <div className="sidebar-logo">
         <span className="sidebar-logo-text">Clearline</span>
+        <button
+          className="sidebar-toggle"
+          onClick={onToggle}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`sidebar-toggle-icon${collapsed ? ' sidebar-toggle-icon--flipped' : ''}`}
+            aria-hidden="true"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
       </div>
       <ul className="sidebar-nav" role="list">
         {navItems.map((item) => (
@@ -23,9 +49,10 @@ export function Sidebar() {
               className={({ isActive }) =>
                 `sidebar-nav-link ${isActive ? 'sidebar-nav-link-active' : ''}`
               }
+              title={collapsed ? item.label : undefined}
             >
               <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="sidebar-nav-label">{item.label}</span>
             </NavLink>
           </li>
         ))}
