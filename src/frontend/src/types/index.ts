@@ -1,4 +1,4 @@
-export type Theme = 'light' | 'dark'
+export type Theme = 'light' | 'dark' | 'system'
 export type FilingStatus = 'single' | 'married_filing_jointly' | 'married_filing_separately' | 'head_of_household'
 export type IncomeType = 'W2' | 'Bonus' | 'RSU' | 'ESPP' | 'SelfEmployed' | 'Other'
 export type IncomeStatus = 'Expected' | 'Official'

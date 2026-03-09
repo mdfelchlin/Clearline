@@ -13,7 +13,7 @@ export function Input({ label, error, hint, suffix, id, className = '', ...props
   return (
     <div className="form-field">
       {label && (
-        <label htmlFor={inputId} className="form-label">
+        <label htmlFor={inputId} className={`form-label${props.disabled ? ' form-label--disabled' : ''}`}>
           {label}
           {props.required && <span className="form-required" aria-hidden="true"> *</span>}
         </label>
