@@ -46,7 +46,7 @@ async function getOrCreateTaxProfile(accountId: string, year: number) {
 
 router.get('/:year', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const profile = await getOrCreateTaxProfile(req.user!.accountId, year)
@@ -59,7 +59,7 @@ router.get('/:year', requireAuth, async (req: AuthenticatedRequest, res: Respons
 
 router.put('/:year', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const profileData = taxProfileSchema.partial().parse(req.body)
@@ -92,7 +92,7 @@ router.put('/:year', requireAuth, async (req: AuthenticatedRequest, res: Respons
 
 router.get('/:year/deductions', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const { data: budget } = await supabase
@@ -133,7 +133,7 @@ router.get('/:year/deductions', requireAuth, async (req: AuthenticatedRequest, r
 
 router.get('/:year/deductions/other', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const profile = await getOrCreateTaxProfile(req.user!.accountId, year)
@@ -154,7 +154,7 @@ router.get('/:year/deductions/other', requireAuth, async (req: AuthenticatedRequ
 
 router.post('/:year/deductions/other', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const deductionData = taxDeductionSchema.parse(req.body)
@@ -177,7 +177,7 @@ router.post('/:year/deductions/other', requireAuth, async (req: AuthenticatedReq
 
 router.put('/:year/deductions/other/:id', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const deductionData = taxDeductionSchema.partial().parse(req.body)
@@ -202,7 +202,7 @@ router.put('/:year/deductions/other/:id', requireAuth, async (req: Authenticated
 
 router.delete('/:year/deductions/other/:id', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const profile = await getOrCreateTaxProfile(req.user!.accountId, year)
@@ -223,7 +223,7 @@ router.delete('/:year/deductions/other/:id', requireAuth, async (req: Authentica
 
 router.get('/:year/calculate', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const profile = await getOrCreateTaxProfile(req.user!.accountId, year)
@@ -290,7 +290,7 @@ router.get('/:year/calculate', requireAuth, async (req: AuthenticatedRequest, re
 
 router.get('/:year/summary', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const profile = await getOrCreateTaxProfile(req.user!.accountId, year)

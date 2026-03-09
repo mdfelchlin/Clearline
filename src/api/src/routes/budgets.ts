@@ -57,7 +57,7 @@ async function getOrCreateBudget(accountId: string, year: number) {
 
 router.get('/:year', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const { data, error } = await supabase
@@ -89,7 +89,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response): 
 
 router.get('/:year/summary', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const { data: budget } = await supabase
@@ -130,7 +130,7 @@ router.get('/:year/summary', requireAuth, async (req: AuthenticatedRequest, res:
 
 router.get('/:year/income', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const { data: budget } = await supabase
@@ -154,7 +154,7 @@ router.get('/:year/income', requireAuth, async (req: AuthenticatedRequest, res: 
 
 router.post('/:year/income', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const incomeData = incomeSchema.parse(req.body)
@@ -177,7 +177,7 @@ router.post('/:year/income', requireAuth, async (req: AuthenticatedRequest, res:
 
 router.put('/:year/income/:id', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const incomeData = incomeSchema.partial().parse(req.body)
@@ -205,7 +205,7 @@ router.put('/:year/income/:id', requireAuth, async (req: AuthenticatedRequest, r
 
 router.delete('/:year/income/:id', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const { data: budget } = await supabase
@@ -228,7 +228,7 @@ router.delete('/:year/income/:id', requireAuth, async (req: AuthenticatedRequest
 
 router.get('/:year/categories', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const budgetId = await getOrCreateBudget(req.user!.accountId, year)
@@ -249,7 +249,7 @@ router.get('/:year/categories', requireAuth, async (req: AuthenticatedRequest, r
 
 router.post('/:year/categories', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const categoryData = categorySchema.parse(req.body)
@@ -309,7 +309,7 @@ router.put('/categories/:id', requireAuth, async (req: AuthenticatedRequest, res
 
 router.patch('/:year/categories/reorder', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const items = reorderSchema.parse(req.body)
@@ -351,7 +351,7 @@ router.delete('/categories/:id', requireAuth, async (req: AuthenticatedRequest, 
 
 router.get('/:year/categories/:categoryId/line-items', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const year = parseInt(req.params.year, 10)
+    const year = parseInt(req.params.year as string, 10)
     if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
 
     const { data, error } = await supabase
