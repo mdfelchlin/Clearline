@@ -6,6 +6,7 @@ import { budgetService } from '../../services/budgetService'
 import { IncomeSource, IncomeType, IncomeStatus } from '../../types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { CurrencyInput } from '../../components/ui/CurrencyInput'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
@@ -119,15 +120,11 @@ function IncomeForm({ initial, onSubmit, onCancel, loading }: IncomeFormProps) {
         onChange={(e) => setForm({ ...form, description: e.target.value })}
         placeholder="e.g. Acme Corp"
       />
-      <Input
+      <CurrencyInput
         label="Annual amount"
-        type="number"
         required
         value={form.amount}
-        onChange={(e) => setForm({ ...form, amount: e.target.value })}
-        placeholder="0"
-        min="0"
-        step="0.01"
+        onChange={(v) => setForm({ ...form, amount: v })}
         error={errors.amount}
       />
       <Select

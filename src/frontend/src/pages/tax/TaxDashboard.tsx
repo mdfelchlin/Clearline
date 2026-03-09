@@ -8,6 +8,7 @@ import { TaxDeduction, FilingStatus } from '../../types'
 import { SummaryCard } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { CurrencyInput } from '../../components/ui/CurrencyInput'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
@@ -154,7 +155,7 @@ export default function TaxDashboard() {
         onChange={(e) => setDeductionForm({ ...deductionForm, item_type: e.target.value as 'deduction' | 'credit' })}
         options={[{ value: 'deduction', label: 'Deduction' }, { value: 'credit', label: 'Credit' }]}
       />
-      <Input label="Amount" type="number" required value={deductionForm.amount} onChange={(e) => setDeductionForm({ ...deductionForm, amount: e.target.value })} min="0" step="0.01" error={deductionErrors.amount} />
+      <CurrencyInput label="Amount" required value={deductionForm.amount} onChange={(v) => setDeductionForm({ ...deductionForm, amount: v })} error={deductionErrors.amount} />
       <Input label="Description (optional)" value={deductionForm.description} onChange={(e) => setDeductionForm({ ...deductionForm, description: e.target.value })} />
       <div className="modal-footer">
         <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>

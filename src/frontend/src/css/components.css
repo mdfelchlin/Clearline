@@ -114,8 +114,26 @@
 .form-error { font-size: 0.8rem; color: var(--color-error); }
 .form-hint { font-size: 0.8rem; color: var(--color-text-muted); }
 
+/* Hide number input spinner arrows */
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.form-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
 .form-input-wrapper { position: relative; display: flex; align-items: center; }
 .form-input-wrapper .form-input { flex: 1; }
+.form-input-has-prefix { padding-left: 28px; }
+.form-input-prefix {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  pointer-events: none;
+}
 .form-input-has-suffix { padding-right: 44px; }
 .form-input-suffix {
   position: absolute;

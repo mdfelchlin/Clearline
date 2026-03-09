@@ -5,6 +5,7 @@ import { budgetService } from '../../services/budgetService'
 import { BudgetCategory, LineItem, LinePeriod } from '../../types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { CurrencyInput } from '../../components/ui/CurrencyInput'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
@@ -152,15 +153,11 @@ export default function BudgetCategories() {
         placeholder="e.g. Rent"
         error={lineItemErrors.name}
       />
-      <Input
+      <CurrencyInput
         label="Amount"
-        type="number"
         required
         value={lineItemForm.amount}
-        onChange={(e) => setLineItemForm({ ...lineItemForm, amount: e.target.value })}
-        placeholder="0"
-        min="0"
-        step="0.01"
+        onChange={(v) => setLineItemForm({ ...lineItemForm, amount: v })}
         error={lineItemErrors.amount}
       />
       <Select
