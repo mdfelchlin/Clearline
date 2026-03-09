@@ -40,14 +40,28 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Network error'
+    throw new ApiError(0, message)
+  }
 
   if (res.status === 204) return undefined as T
 
-  const data = await res.json()
+  let data: unknown
+  try {
+    const text = await res.text()
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    data = {}
+  }
 
   if (!res.ok) {
-    throw new ApiError(res.status, data.error ?? 'Request failed', data.details)
+    const body = data as { error?: string; details?: unknown }
+    const message = body?.error ?? res.statusText ?? `Request failed (${res.status})`
+    throw new ApiError(res.status, message, body?.details)
   }
 
   return data as T

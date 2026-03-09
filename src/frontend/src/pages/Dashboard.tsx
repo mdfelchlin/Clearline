@@ -5,7 +5,7 @@ import { budgetService } from '../services/budgetService'
 import { taxService } from '../services/taxService'
 import { SummaryCard } from '../components/ui/Card'
 import { Spinner } from '../components/ui/Spinner'
-import { ErrorMessage } from '../components/ui/ErrorMessage'
+import { ErrorMessage, getErrorMessage } from '../components/ui/ErrorMessage'
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount)
@@ -53,7 +53,7 @@ export default function Dashboard() {
         <div className="page-header">
           <h1 className="page-title">Dashboard</h1>
         </div>
-        <ErrorMessage onRetry={refetchSummary} />
+        <ErrorMessage message={getErrorMessage(summaryError)} onRetry={refetchSummary} />
       </div>
     )
   }

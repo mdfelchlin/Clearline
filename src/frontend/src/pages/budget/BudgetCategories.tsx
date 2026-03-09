@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useYear } from '../../context/YearContext'
 import { budgetService } from '../../services/budgetService'
 import { BudgetCategory, LineItem, LinePeriod } from '../../types'
@@ -9,7 +10,7 @@ import { CurrencyInput } from '../../components/ui/CurrencyInput'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
-import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { ErrorMessage, getErrorMessage } from '../../components/ui/ErrorMessage'
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount)
@@ -29,10 +30,16 @@ interface LineItemFormData {
   period: LinePeriod
 }
 
-export default function BudgetCategories() {
+interface BudgetCategoriesProps {
+  categories?: BudgetCategory[] | null
+}
+
+export default function BudgetCategories({ categories: categoriesProp }: BudgetCategoriesProps = {}) {
   const { selectedYear } = useYear()
   const queryClient = useQueryClient()
+  const collapsedInitialized = useRef(false)
 
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
   const [addCatOpen, setAddCatOpen] = useState(false)
   const [newCatName, setNewCatName] = useState('')
   const [newCatTaxDeduct, setNewCatTaxDeduct] = useState(false)
@@ -41,10 +48,32 @@ export default function BudgetCategories() {
   const [lineItemForm, setLineItemForm] = useState<LineItemFormData>({ name: '', amount: '', period: 'Annual' })
   const [lineItemErrors, setLineItemErrors] = useState<Partial<LineItemFormData>>({})
 
-  const { data: categories, isLoading, error, refetch } = useQuery({
+  const toggleCategory = useCallback((id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const categoriesQuery = useQuery({
     queryKey: ['categories', selectedYear],
     queryFn: () => budgetService.getCategories(selectedYear),
+    enabled: categoriesProp === undefined,
   })
+  const categories = categoriesProp ?? categoriesQuery.data
+  const isLoading = categoriesProp === undefined && categoriesQuery.isLoading
+  const error = categoriesProp === undefined ? categoriesQuery.error : null
+  const refetch = categoriesQuery.refetch
+
+  useEffect(() => {
+    if (!categories?.length || collapsedInitialized.current) return
+    const expenseIds = categories.filter((c) => !c.is_income_category && !c.is_taxes_category).map((c) => c.id)
+    if (expenseIds.length === 0) return
+    collapsedInitialized.current = true
+    setCollapsedIds(new Set(expenseIds))
+  }, [categories])
 
   const addCategoryMutation = useMutation({
     mutationFn: (data: Parameters<typeof budgetService.createCategory>[1]) =>
@@ -135,7 +164,7 @@ export default function BudgetCategories() {
   }
 
   if (isLoading) return <div className="loading-container"><Spinner size="lg" /></div>
-  if (error) return <ErrorMessage onRetry={refetch} />
+  if (error) return <ErrorMessage message={getErrorMessage(error)} onRetry={refetch} />
 
   const isEmpty = !categories || categories.length === 0
 
@@ -201,49 +230,65 @@ export default function BudgetCategories() {
             </div>
           )}
 
-          {expenseCategories.map((cat) => (
-            <div key={cat.id} className="category-group">
-              <div className="category-header">
-                <span className="category-name">{cat.name}</span>
-                {cat.is_tax_deduction && <span className="badge badge-info">Tax deductible</span>}
-                <span className="category-total">{formatCurrency(categoryTotal(cat))}</span>
-                <div className="category-actions">
-                  <button className="btn btn-ghost btn-sm" onClick={() => openAddLineItem(cat)}>+ Line item</button>
-                  <button
-                    className="btn btn-ghost btn-sm btn-danger-ghost"
-                    onClick={() => { if (confirm(`Delete "${cat.name}"?`)) deleteCategoryMutation.mutate(cat.id) }}
-                    aria-label={`Delete ${cat.name}`}
-                  >
-                    Delete
-                  </button>
+          {expenseCategories.map((cat) => {
+            const isCollapsed = collapsedIds.has(cat.id)
+            return (
+              <div key={cat.id} className={`category-group${isCollapsed ? ' category-group--collapsed' : ''}`}>
+                <div
+                  className="category-header category-header--clickable"
+                  onClick={() => toggleCategory(cat.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={!isCollapsed}
+                  aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${cat.name}`}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategory(cat.id) } }}
+                >
+                  <span className="category-header-chevron" aria-hidden>
+                    {isCollapsed ? <ChevronRight size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                  </span>
+                  <span className="category-name">{cat.name}</span>
+                  {cat.is_tax_deduction && <span className="badge badge-info">Tax deductible</span>}
+                  <span className="category-total">{formatCurrency(categoryTotal(cat))}</span>
+                  <div className="category-actions" onClick={(e) => e.stopPropagation()}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openAddLineItem(cat)}>+ Line item</button>
+                    <button
+                      className="btn btn-ghost btn-sm btn-danger-ghost"
+                      onClick={() => { if (confirm(`Delete "${cat.name}"?`)) deleteCategoryMutation.mutate(cat.id) }}
+                      aria-label={`Delete ${cat.name}`}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
+                {cat.budget_category_line_items.length > 0 && (
+                  <div className="category-content">
+                    <ul className="line-items-list">
+                      {cat.budget_category_line_items.map((item) => (
+                        <li key={item.id} className="line-item">
+                          <span className="line-item-name">{item.name}</span>
+                          <span className="line-item-period">{item.period}</span>
+                          <span className="line-item-amount">{formatCurrency(item.amount)}</span>
+                          <span className="line-item-annual">
+                            ({formatCurrency(annualAmount(item.amount, item.period))}/yr)
+                          </span>
+                          <div className="line-item-actions">
+                            <button className="btn btn-ghost btn-sm" onClick={() => openEditLineItem(cat, item)}>Edit</button>
+                            <button
+                              className="btn btn-ghost btn-sm btn-danger-ghost"
+                              onClick={() => deleteLineItemMutation.mutate({ catId: cat.id, itemId: item.id })}
+                              aria-label={`Delete ${item.name}`}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-              {cat.budget_category_line_items.length > 0 && (
-                <ul className="line-items-list">
-                  {cat.budget_category_line_items.map((item) => (
-                    <li key={item.id} className="line-item">
-                      <span className="line-item-name">{item.name}</span>
-                      <span className="line-item-period">{item.period}</span>
-                      <span className="line-item-amount">{formatCurrency(item.amount)}</span>
-                      <span className="line-item-annual">
-                        ({formatCurrency(annualAmount(item.amount, item.period))}/yr)
-                      </span>
-                      <div className="line-item-actions">
-                        <button className="btn btn-ghost btn-sm" onClick={() => openEditLineItem(cat, item)}>Edit</button>
-                        <button
-                          className="btn btn-ghost btn-sm btn-danger-ghost"
-                          onClick={() => deleteLineItemMutation.mutate({ catId: cat.id, itemId: item.id })}
-                          aria-label={`Delete ${item.name}`}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+            )
+          })}
 
           {taxesCategory && (
             <div className="category-group category-group-system">

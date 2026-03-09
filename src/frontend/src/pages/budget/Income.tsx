@@ -10,7 +10,7 @@ import { CurrencyInput } from '../../components/ui/CurrencyInput'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
-import { ErrorMessage } from '../../components/ui/ErrorMessage'
+import { ErrorMessage, getErrorMessage } from '../../components/ui/ErrorMessage'
 
 const INCOME_TYPE_LABELS: Record<IncomeType, string> = {
   W2: 'W-2 Salary',
@@ -241,7 +241,7 @@ export default function IncomePage() {
   }
 
   if (isLoading) return <div className="page"><div className="page-header"><h1 className="page-title">Income</h1></div><div className="loading-container"><Spinner size="lg" /></div></div>
-  if (error) return <div className="page"><div className="page-header"><h1 className="page-title">Income</h1></div><ErrorMessage onRetry={refetch} /></div>
+  if (error) return <div className="page"><div className="page-header"><h1 className="page-title">Income</h1></div><ErrorMessage message={getErrorMessage(error)} onRetry={refetch} /></div>
 
   const isEmpty = !income || income.length === 0
   const officialTotal = income?.filter(i => i.status === 'Official').reduce((s, i) => s + i.amount, 0) ?? 0
