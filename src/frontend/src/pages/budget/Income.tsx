@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { FileText, Gift, TrendingUp, Building2, Briefcase, MoreHorizontal, LucideIcon } from 'lucide-react'
 import { useYear } from '../../context/YearContext'
 import { budgetService } from '../../services/budgetService'
 import { IncomeSource, IncomeType, IncomeStatus } from '../../types'
@@ -11,12 +12,58 @@ import { Spinner } from '../../components/ui/Spinner'
 import { ErrorMessage } from '../../components/ui/ErrorMessage'
 
 const INCOME_TYPE_LABELS: Record<IncomeType, string> = {
-  W2: 'W-2 (Salary)',
+  W2: 'W-2 Salary',
   Bonus: 'Bonus',
-  RSU: 'RSU (Stock)',
-  ESPP: 'ESPP (Stock)',
+  RSU: 'RSU',
+  ESPP: 'ESPP',
   SelfEmployed: 'Self-Employed',
   Other: 'Other',
+}
+
+const INCOME_TYPE_ICONS: Record<IncomeType, LucideIcon> = {
+  W2: FileText,
+  Bonus: Gift,
+  RSU: TrendingUp,
+  ESPP: Building2,
+  SelfEmployed: Briefcase,
+  Other: MoreHorizontal,
+}
+
+const INCOME_TYPE_DESCRIPTIONS: Record<IncomeType, string> = {
+  W2: 'Regular wages from an employer',
+  Bonus: 'Performance or signing bonus',
+  RSU: 'Restricted stock unit vesting',
+  ESPP: 'Employee stock purchase plan',
+  SelfEmployed: 'Freelance or business income',
+  Other: 'Any other income source',
+}
+
+interface IncomeTypePickerProps {
+  onSelect: (type: IncomeType) => void
+}
+
+function IncomeTypePicker({ onSelect }: IncomeTypePickerProps) {
+  return (
+    <div className="income-type-grid">
+      {(Object.keys(INCOME_TYPE_LABELS) as IncomeType[]).map((type) => {
+        const Icon = INCOME_TYPE_ICONS[type]
+        return (
+          <button
+            key={type}
+            type="button"
+            className="income-type-tile"
+            onClick={() => onSelect(type)}
+          >
+            <span className="income-type-tile-icon">
+              <Icon size={32} strokeWidth={1.5} />
+            </span>
+            <span className="income-type-tile-label">{INCOME_TYPE_LABELS[type]}</span>
+            <span className="income-type-tile-desc">{INCOME_TYPE_DESCRIPTIONS[type]}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function formatCurrency(amount: number): string {
@@ -105,7 +152,25 @@ export default function IncomePage() {
   const queryClient = useQueryClient()
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [addStep, setAddStep] = useState<'type-select' | 'form'>('type-select')
+  const [selectedType, setSelectedType] = useState<IncomeType>('W2')
   const [editTarget, setEditTarget] = useState<IncomeSource | null>(null)
+
+  const openAddModal = () => {
+    setAddStep('type-select')
+    setModalOpen(true)
+  }
+
+  const handleTypeSelect = (type: IncomeType) => {
+    setSelectedType(type)
+    setAddStep('form')
+  }
+
+  const closeAddModal = () => {
+    setModalOpen(false)
+    setAddStep('type-select')
+    setEditTarget(null)
+  }
 
   const {
     data: income,
@@ -123,7 +188,7 @@ export default function IncomePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['income', selectedYear] })
       queryClient.invalidateQueries({ queryKey: ['budget-summary', selectedYear] })
-      setModalOpen(false)
+      closeAddModal()
     },
   })
 
@@ -172,6 +237,8 @@ export default function IncomePage() {
   }
 
   const openDuplicate = (item: IncomeSource) => {
+    setSelectedType(item.type)
+    setAddStep('form')
     setEditTarget({ ...item, id: '' })
     setModalOpen(true)
   }
@@ -186,7 +253,7 @@ export default function IncomePage() {
     <div className="page">
       <div className="page-header">
         <h1 className="page-title">Income — {selectedYear}</h1>
-        <Button onClick={() => setModalOpen(true)}>+ Add income</Button>
+        <Button onClick={openAddModal}>+ Add income</Button>
       </div>
 
       {addMutation.error && (
@@ -200,7 +267,7 @@ export default function IncomePage() {
           <div className="empty-state-icon" aria-hidden="true">💵</div>
           <h2 className="empty-state-title">No income for {selectedYear}</h2>
           <p className="empty-state-desc">Add your first income source to get started.</p>
-          <Button onClick={() => setModalOpen(true)}>Add your first income source</Button>
+          <Button onClick={openAddModal}>Add your first income source</Button>
         </div>
       ) : (
         <>
@@ -254,15 +321,23 @@ export default function IncomePage() {
 
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title="Add income"
+        onClose={closeAddModal}
+        title={addStep === 'type-select' ? 'Add income' : `Add ${INCOME_TYPE_LABELS[selectedType]}`}
+        onBack={addStep === 'form' ? () => setAddStep('type-select') : undefined}
       >
-        <IncomeForm
-          initial={editTarget?.id === '' ? { type: editTarget.type, description: editTarget.description ?? '', amount: String(editTarget.amount), status: editTarget.status } : undefined}
-          onSubmit={handleAdd}
-          onCancel={() => setModalOpen(false)}
-          loading={addMutation.isPending}
-        />
+        {addStep === 'type-select' ? (
+          <IncomeTypePicker onSelect={handleTypeSelect} />
+        ) : (
+          <IncomeForm
+            initial={editTarget?.id === ''
+              ? { type: editTarget.type, description: editTarget.description ?? '', amount: String(editTarget.amount), status: editTarget.status }
+              : { type: selectedType, description: '', amount: '', status: 'Expected' }
+            }
+            onSubmit={handleAdd}
+            onCancel={closeAddModal}
+            loading={addMutation.isPending}
+          />
+        )}
       </Modal>
 
       {editTarget && editTarget.id !== '' && (

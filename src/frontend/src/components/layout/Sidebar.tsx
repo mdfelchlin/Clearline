@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom'
+import { LayoutDashboard, Wallet, TrendingUp, Receipt, Settings, ChevronLeft, LucideIcon } from 'lucide-react'
 import { Logo } from '../ui/Logo'
 
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: '⊞' },
-  { to: '/budget', label: 'Budget', icon: '💰' },
-  { to: '/income', label: 'Income', icon: '📊' },
-  { to: '/tax', label: 'Tax', icon: '📋' },
-  { to: '/settings', label: 'Settings', icon: '⚙' },
+const navItems: { to: string; label: string; icon: LucideIcon }[] = [
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/budget', label: 'Budget', icon: Wallet },
+  { to: '/income', label: 'Income', icon: TrendingUp },
+  { to: '/tax', label: 'Tax', icon: Receipt },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 interface SidebarProps {
@@ -21,18 +22,20 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <Logo variant="sidebar" />
       </div>
       <ul className="sidebar-nav" role="list">
-        {navItems.map((item) => (
-          <li key={item.to}>
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <li key={to}>
             <NavLink
-              to={item.to}
-              end={item.to === '/'}
+              to={to}
+              end={to === '/'}
               className={({ isActive }) =>
                 `sidebar-nav-link ${isActive ? 'sidebar-nav-link-active' : ''}`
               }
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? label : undefined}
             >
-              <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
-              <span className="sidebar-nav-label">{item.label}</span>
+              <span className="sidebar-nav-icon" aria-hidden="true">
+                <Icon size={18} strokeWidth={1.75} />
+              </span>
+              <span className="sidebar-nav-label">{label}</span>
             </NavLink>
           </li>
         ))}
@@ -44,21 +47,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`sidebar-toggle-icon${collapsed ? ' sidebar-toggle-icon--flipped' : ''}`}
-            aria-hidden="true"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
+          <span className="sidebar-nav-icon" aria-hidden="true">
+            <ChevronLeft
+              size={18}
+              strokeWidth={1.75}
+              className={`sidebar-toggle-icon${collapsed ? ' sidebar-toggle-icon--flipped' : ''}`}
+            />
+          </span>
           <span className="sidebar-nav-label">Collapse</span>
         </button>
       </div>
