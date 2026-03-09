@@ -16,6 +16,8 @@ interface DropdownProps {
   onChange: (value: string) => void
   id?: string
   'aria-label'?: string
+  /** Shown in trigger when value is empty; avoids showing a placeholder option in the list */
+  placeholder?: string
 }
 
 export function Dropdown({
@@ -28,11 +30,13 @@ export function Dropdown({
   onChange,
   id: idProp,
   'aria-label': ariaLabel,
+  placeholder,
 }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const id = idProp ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
   const selectedOption = options.find((o) => o.value === value)
+  const triggerLabel = value ? (selectedOption?.label ?? value) : (placeholder ?? '')
 
   useEffect(() => {
     if (!open) return
@@ -67,14 +71,14 @@ export function Dropdown({
         <button
           type="button"
           id={id}
-          className={`dropdown-trigger ${error ? 'form-input-error' : ''}`}
+          className={`dropdown-trigger ${error ? 'form-input-error' : ''}${!value && placeholder ? ' dropdown-trigger--placeholder' : ''}`}
           onClick={() => !disabled && setOpen((v) => !v)}
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-label={ariaLabel ?? label ?? 'Choose option'}
           disabled={disabled}
         >
-          <span>{selectedOption?.label ?? value}</span>
+          <span>{triggerLabel}</span>
           <ChevronDown
             size={14}
             strokeWidth={2}

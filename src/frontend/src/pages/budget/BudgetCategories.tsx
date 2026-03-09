@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, MoreVertical } from 'lucide-react'
 import { useYear } from '../../context/YearContext'
 import { budgetService } from '../../services/budgetService'
 import { BudgetCategory, LineItem, LinePeriod } from '../../types'
@@ -24,6 +25,17 @@ function categoryTotal(cat: BudgetCategory): number {
   return cat.budget_category_line_items.reduce((s, li) => s + annualAmount(li.amount, li.period), 0)
 }
 
+function findLineItemContext(
+  lineItemId: string,
+  categories: BudgetCategory[]
+): { cat: BudgetCategory; item: LineItem } | null {
+  for (const c of categories) {
+    const item = c.budget_category_line_items.find((li) => li.id === lineItemId)
+    if (item) return { cat: c, item }
+  }
+  return null
+}
+
 interface LineItemFormData {
   name: string
   amount: string
@@ -34,7 +46,7 @@ interface BudgetCategoriesProps {
   categories?: BudgetCategory[] | null
 }
 
-export default function BudgetCategories({ categories: categoriesProp }: BudgetCategoriesProps = {}) {
+export default function BudgetCategories({ categories: categoriesProp }: BudgetCategoriesProps) {
   const { selectedYear } = useYear()
   const queryClient = useQueryClient()
   const collapsedInitialized = useRef(false)
@@ -45,8 +57,20 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
   const [newCatTaxDeduct, setNewCatTaxDeduct] = useState(false)
   const [addLineItemTarget, setAddLineItemTarget] = useState<BudgetCategory | null>(null)
   const [editLineItemTarget, setEditLineItemTarget] = useState<{ cat: BudgetCategory; item: LineItem } | null>(null)
+  const [moveLineItemTarget, setMoveLineItemTarget] = useState<{ cat: BudgetCategory; item: LineItem } | null>(null)
+  const [moveTargetCategoryId, setMoveTargetCategoryId] = useState('')
+  const [renameCategoryTarget, setRenameCategoryTarget] = useState<BudgetCategory | null>(null)
+  const [renameCategoryName, setRenameCategoryName] = useState('')
   const [lineItemForm, setLineItemForm] = useState<LineItemFormData>({ name: '', amount: '', period: 'Annual' })
   const [lineItemErrors, setLineItemErrors] = useState<Partial<LineItemFormData>>({})
+  const [openLineItemMenuId, setOpenLineItemMenuId] = useState<string | null>(null)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null)
+  const lineItemMenuTriggerRef = useRef<HTMLButtonElement>(null)
+  const lineItemMenuPortalRef = useRef<HTMLDivElement>(null)
+  const [openCategoryMenuId, setOpenCategoryMenuId] = useState<string | null>(null)
+  const [categoryMenuPosition, setCategoryMenuPosition] = useState<{ top: number; right: number } | null>(null)
+  const categoryMenuTriggerRef = useRef<HTMLButtonElement>(null)
+  const categoryMenuPortalRef = useRef<HTMLDivElement>(null)
 
   const toggleCategory = useCallback((id: string) => {
     setCollapsedIds((prev) => {
@@ -75,6 +99,52 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
     setCollapsedIds(new Set(expenseIds))
   }, [categories])
 
+  useLayoutEffect(() => {
+    if (!openLineItemMenuId || !lineItemMenuTriggerRef.current) {
+      setMenuPosition(null)
+      return
+    }
+    const rect = lineItemMenuTriggerRef.current.getBoundingClientRect()
+    setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+  }, [openLineItemMenuId])
+
+  useLayoutEffect(() => {
+    if (!openCategoryMenuId || !categoryMenuTriggerRef.current) {
+      setCategoryMenuPosition(null)
+      return
+    }
+    const rect = categoryMenuTriggerRef.current.getBoundingClientRect()
+    setCategoryMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+  }, [openCategoryMenuId])
+
+  useEffect(() => {
+    if (!openLineItemMenuId) return
+    const handleOutside = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (
+        lineItemMenuTriggerRef.current?.contains(target) ||
+        lineItemMenuPortalRef.current?.contains(target)
+      ) return
+      setOpenLineItemMenuId(null)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [openLineItemMenuId])
+
+  useEffect(() => {
+    if (!openCategoryMenuId) return
+    const handleOutside = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (
+        categoryMenuTriggerRef.current?.contains(target) ||
+        categoryMenuPortalRef.current?.contains(target)
+      ) return
+      setOpenCategoryMenuId(null)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [openCategoryMenuId])
+
   const addCategoryMutation = useMutation({
     mutationFn: (data: Parameters<typeof budgetService.createCategory>[1]) =>
       budgetService.createCategory(selectedYear, data),
@@ -90,6 +160,15 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', selectedYear] })
       queryClient.invalidateQueries({ queryKey: ['budget-summary', selectedYear] })
+    },
+  })
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => budgetService.updateCategory(id, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', selectedYear] })
+      setRenameCategoryTarget(null)
+      setRenameCategoryName('')
     },
   })
 
@@ -119,6 +198,17 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories', selectedYear] })
       queryClient.invalidateQueries({ queryKey: ['budget-summary', selectedYear] })
+    },
+  })
+
+  const moveLineItemMutation = useMutation({
+    mutationFn: ({ lineItemId, targetCategoryId }: { lineItemId: string; targetCategoryId: string }) =>
+      budgetService.moveLineItem(selectedYear, lineItemId, targetCategoryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', selectedYear] })
+      queryClient.invalidateQueries({ queryKey: ['budget-summary', selectedYear] })
+      setMoveLineItemTarget(null)
+      setMoveTargetCategoryId('')
     },
   })
 
@@ -172,34 +262,45 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
   const taxesCategory = categories?.find((c) => c.is_taxes_category)
   const expenseCategories = categories?.filter((c) => !c.is_income_category && !c.is_taxes_category) ?? []
 
-  const lineItemForm_ = (onSubmit: (e: React.FormEvent) => void, loading: boolean, onCancel: () => void) => (
+  const openLineItemContext =
+    openLineItemMenuId && expenseCategories.length > 0
+      ? findLineItemContext(openLineItemMenuId, expenseCategories)
+      : null
+
+  const openCategoryContext = openCategoryMenuId != null ? expenseCategories.find((c) => c.id === openCategoryMenuId) ?? null : null
+
+  const renderLineItemFormFields = (
+    onSubmit: (e: React.FormEvent) => void,
+    loading: boolean,
+    onCancel: () => void
+  ): React.ReactElement => (
     <form onSubmit={onSubmit} noValidate>
-      <Input
-        label="Name"
-        required
-        value={lineItemForm.name}
-        onChange={(e) => setLineItemForm({ ...lineItemForm, name: e.target.value })}
-        placeholder="e.g. Rent"
-        error={lineItemErrors.name}
-      />
-      <CurrencyInput
-        label="Amount"
-        required
-        value={lineItemForm.amount}
-        onChange={(v) => setLineItemForm({ ...lineItemForm, amount: v })}
-        error={lineItemErrors.amount}
-      />
-      <Select
-        label="Period"
-        value={lineItemForm.period}
-        onChange={(e) => setLineItemForm({ ...lineItemForm, period: e.target.value as LinePeriod })}
-        options={[{ value: 'Annual', label: 'Annual' }, { value: 'Monthly', label: 'Monthly' }]}
-      />
-      <div className="modal-footer">
-        <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" loading={loading}>Save</Button>
-      </div>
-    </form>
+        <Input
+          label="Name"
+          required
+          value={lineItemForm.name}
+          onChange={(e) => setLineItemForm({ ...lineItemForm, name: e.target.value })}
+          placeholder="e.g. Rent"
+          error={lineItemErrors.name}
+        />
+        <CurrencyInput
+          label="Amount"
+          required
+          value={lineItemForm.amount}
+          onChange={(v) => setLineItemForm({ ...lineItemForm, amount: v })}
+          error={lineItemErrors.amount}
+        />
+        <Select
+          label="Period"
+          value={lineItemForm.period}
+          onChange={(e) => setLineItemForm({ ...lineItemForm, period: e.target.value as LinePeriod })}
+          options={[{ value: 'Annual', label: 'Annual' }, { value: 'Monthly', label: 'Monthly' }]}
+        />
+        <div className="modal-footer">
+          <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" loading={loading}>Save</Button>
+        </div>
+      </form>
   )
 
   return (
@@ -252,11 +353,15 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
                   <div className="category-actions" onClick={(e) => e.stopPropagation()}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openAddLineItem(cat)}>+ Line item</button>
                     <button
-                      className="btn btn-ghost btn-sm btn-danger-ghost"
-                      onClick={() => { if (confirm(`Delete "${cat.name}"?`)) deleteCategoryMutation.mutate(cat.id) }}
-                      aria-label={`Delete ${cat.name}`}
+                      ref={openCategoryMenuId === cat.id ? categoryMenuTriggerRef : undefined}
+                      type="button"
+                      className="btn btn-ghost btn-sm btn-icon"
+                      onClick={() => setOpenCategoryMenuId((id) => (id === cat.id ? null : cat.id))}
+                      aria-label={`Actions for ${cat.name}`}
+                      aria-expanded={openCategoryMenuId === cat.id}
+                      aria-haspopup="menu"
                     >
-                      Delete
+                      <MoreVertical size={16} strokeWidth={2} />
                     </button>
                   </div>
                 </div>
@@ -271,14 +376,17 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
                           <span className="line-item-annual">
                             ({formatCurrency(annualAmount(item.amount, item.period))}/yr)
                           </span>
-                          <div className="line-item-actions">
-                            <button className="btn btn-ghost btn-sm" onClick={() => openEditLineItem(cat, item)}>Edit</button>
+                          <div className="line-item-actions line-item-actions--menu">
                             <button
-                              className="btn btn-ghost btn-sm btn-danger-ghost"
-                              onClick={() => deleteLineItemMutation.mutate({ catId: cat.id, itemId: item.id })}
-                              aria-label={`Delete ${item.name}`}
+                              ref={openLineItemMenuId === item.id ? lineItemMenuTriggerRef : undefined}
+                              type="button"
+                              className="btn btn-ghost btn-sm btn-icon"
+                              onClick={() => setOpenLineItemMenuId((id) => (id === item.id ? null : item.id))}
+                              aria-label={`Actions for ${item.name}`}
+                              aria-expanded={openLineItemMenuId === item.id}
+                              aria-haspopup="menu"
                             >
-                              Delete
+                              <MoreVertical size={16} strokeWidth={2} />
                             </button>
                           </div>
                         </li>
@@ -300,6 +408,131 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
           )}
         </div>
       )}
+
+      {openCategoryContext &&
+        categoryMenuPosition &&
+        createPortal(
+          <div
+            ref={categoryMenuPortalRef}
+            className="line-item-menu line-item-menu--portal"
+            role="menu"
+            style={{
+              position: 'fixed',
+              top: categoryMenuPosition.top,
+              right: categoryMenuPosition.right,
+              left: 'auto',
+            }}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="line-item-menu-item"
+              onClick={() => {
+                setRenameCategoryTarget(openCategoryContext)
+                setRenameCategoryName(openCategoryContext.name)
+                setOpenCategoryMenuId(null)
+              }}
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="line-item-menu-item line-item-menu-item--danger"
+              onClick={() => {
+                if (confirm(`Delete "${openCategoryContext.name}"?`)) deleteCategoryMutation.mutate(openCategoryContext.id)
+                setOpenCategoryMenuId(null)
+              }}
+            >
+              Delete
+            </button>
+          </div>,
+          document.body
+        )}
+
+      {openLineItemContext &&
+        menuPosition &&
+        createPortal(
+          <div
+            ref={lineItemMenuPortalRef}
+            className="line-item-menu line-item-menu--portal"
+            role="menu"
+            style={{
+              position: 'fixed',
+              top: menuPosition.top,
+              right: menuPosition.right,
+              left: 'auto',
+            }}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="line-item-menu-item"
+              onClick={() => {
+                openEditLineItem(openLineItemContext.cat, openLineItemContext.item)
+                setOpenLineItemMenuId(null)
+              }}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="line-item-menu-item"
+              onClick={() => {
+                setMoveLineItemTarget({ cat: openLineItemContext.cat, item: openLineItemContext.item })
+                setMoveTargetCategoryId('')
+                setOpenLineItemMenuId(null)
+              }}
+            >
+              Move
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="line-item-menu-item line-item-menu-item--danger"
+              onClick={() => {
+                deleteLineItemMutation.mutate({ catId: openLineItemContext.cat.id, itemId: openLineItemContext.item.id })
+                setOpenLineItemMenuId(null)
+              }}
+            >
+              Delete
+            </button>
+          </div>,
+          document.body
+        )}
+
+      <Modal
+        isOpen={!!renameCategoryTarget}
+        onClose={() => { setRenameCategoryTarget(null); setRenameCategoryName('') }}
+        title="Rename category"
+      >
+        {renameCategoryTarget && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const name = renameCategoryName.trim()
+              if (name) updateCategoryMutation.mutate({ id: renameCategoryTarget.id, name })
+            }}
+            noValidate
+          >
+            <Input
+              label="Category name"
+              required
+              value={renameCategoryName}
+              onChange={(e) => setRenameCategoryName(e.target.value)}
+              placeholder="e.g. Housing"
+              autoFocus
+            />
+            <div className="modal-footer">
+              <Button type="button" variant="ghost" onClick={() => { setRenameCategoryTarget(null); setRenameCategoryName('') }}>Cancel</Button>
+              <Button type="submit" loading={updateCategoryMutation.isPending} disabled={!renameCategoryName.trim()}>
+                Save
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
 
       <Modal isOpen={addCatOpen} onClose={() => setAddCatOpen(false)} title="Add category">
         <form onSubmit={(e) => { e.preventDefault(); if (newCatName.trim()) addCategoryMutation.mutate({ name: newCatName, is_tax_deduction: newCatTaxDeduct }) }} noValidate>
@@ -326,7 +559,7 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
         onClose={() => setAddLineItemTarget(null)}
         title={`Add line item to "${addLineItemTarget?.name}"`}
       >
-        {lineItemForm_(handleAddLineItem, addLineItemMutation.isPending, () => setAddLineItemTarget(null))}
+        {renderLineItemFormFields(handleAddLineItem, addLineItemMutation.isPending, () => setAddLineItemTarget(null))}
       </Modal>
 
       <Modal
@@ -334,7 +567,41 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
         onClose={() => setEditLineItemTarget(null)}
         title="Edit line item"
       >
-        {lineItemForm_(handleEditLineItem, updateLineItemMutation.isPending, () => setEditLineItemTarget(null))}
+        {renderLineItemFormFields(handleEditLineItem, updateLineItemMutation.isPending, () => setEditLineItemTarget(null))}
+      </Modal>
+
+      <Modal
+        isOpen={!!moveLineItemTarget}
+        onClose={() => { setMoveLineItemTarget(null); setMoveTargetCategoryId('') }}
+        title="Move line item"
+      >
+        {moveLineItemTarget && (
+          <>
+            <p style={{ color: 'var(--color-text-secondary)', marginBottom: 16 }}>
+              Move &quot;{moveLineItemTarget.item.name}&quot; from {moveLineItemTarget.cat.name} to:
+            </p>
+            <Select
+              label="Category"
+              placeholder="Select a category"
+              value={moveTargetCategoryId}
+              onChange={(e) => setMoveTargetCategoryId(e.target.value)}
+              options={expenseCategories
+                .filter((c) => c.id !== moveLineItemTarget.cat.id)
+                .map((c) => ({ value: c.id, label: c.name }))}
+            />
+            <div className="modal-footer">
+              <Button type="button" variant="ghost" onClick={() => { setMoveLineItemTarget(null); setMoveTargetCategoryId('') }}>Cancel</Button>
+              <Button
+                type="button"
+                disabled={!moveTargetCategoryId}
+                loading={moveLineItemMutation.isPending}
+                onClick={() => moveTargetCategoryId && moveLineItemMutation.mutate({ lineItemId: moveLineItemTarget.item.id, targetCategoryId: moveTargetCategoryId })}
+              >
+                Move
+              </Button>
+            </div>
+          </>
+        )}
       </Modal>
     </div>
   )

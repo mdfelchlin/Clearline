@@ -1,4 +1,4 @@
-﻿---
+---
 description: Project Development Guidelines
 globs: ["**/*"]
 alwaysApply: true
@@ -32,4 +32,7 @@ TypeScript (strict); Node.js LTS; React 18+: Follow standard conventions
 - main: Added TypeScript (strict); Node.js LTS; React 18+ + React, Vite, React Router, TanStack Query (or React Context), Supabase client (`@supabase/supabase-js`). Backend: Express or Fastify or Vercel serverless; Zod or Joi for validation; Pino or structured logging.
 
 <!-- MANUAL ADDITIONS START -->
+## Verification
+
+- **Always build after changes:** Before saying a solution is good or complete, run the project build (and any tests/lint the change affects) to ensure the solution compiles and passes. For example: from repo root run `npm run build` or from `src/frontend` run `npm run build`; fix any errors before concluding.
 <!-- MANUAL ADDITIONS END -->

@@ -28,6 +28,7 @@ const lineItemSchema = z.object({
 })
 
 const reorderSchema = z.array(z.object({ id: z.string().uuid(), sort_order: z.number().int() }))
+const moveLineItemSchema = z.object({ target_category_id: z.string().uuid() })
 
 async function getOrCreateBudget(accountId: string, year: number) {
   const { data: existing } = await supabase
@@ -451,6 +452,59 @@ router.delete('/:year/categories/:categoryId/line-items/:lineItemId', requireAut
   } catch (err) {
     logger.error({ err }, 'Delete line item error')
     res.status(500).json({ error: 'Failed to delete line item' })
+  }
+})
+
+router.patch('/:year/line-items/:lineItemId/move', requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const year = parseInt(req.params.year as string, 10)
+    if (isNaN(year)) { res.status(400).json({ error: 'Invalid year' }); return }
+    const { target_category_id } = moveLineItemSchema.parse(req.body)
+
+    const { data: lineItem } = await supabase
+      .from('budget_category_line_items')
+      .select('id, budget_category_id, budget_categories!inner(budget_id, budgets!inner(account_id))')
+      .eq('id', req.params.lineItemId)
+      .single()
+
+    if (!lineItem) { res.status(404).json({ error: 'Line item not found' }); return }
+    const catRow = (lineItem as unknown as { budget_categories: { budget_id: string; budgets: { account_id: string } } | Array<{ budget_id: string; budgets: { account_id: string } }> }).budget_categories
+    const cat = Array.isArray(catRow) ? catRow[0] : catRow
+    if (!cat?.budgets || cat.budgets.account_id !== req.user!.accountId) { res.status(403).json({ error: 'Access denied' }); return }
+
+    const { data: targetCategory } = await supabase
+      .from('budget_categories')
+      .select('id, budget_id, is_income_category, is_taxes_category, budgets!inner(account_id)')
+      .eq('id', target_category_id)
+      .single()
+
+    if (!targetCategory) { res.status(404).json({ error: 'Target category not found' }); return }
+    const targetBudget = targetCategory.budgets as unknown as { account_id: string } | null
+    if (!targetBudget || targetBudget.account_id !== req.user!.accountId) { res.status(403).json({ error: 'Access denied' }); return }
+    const sourceBudgetId = cat.budget_id
+    if (targetCategory.budget_id !== sourceBudgetId) { res.status(400).json({ error: 'Target category must be in the same budget' }); return }
+    if (targetCategory.is_income_category || targetCategory.is_taxes_category) {
+      res.status(400).json({ error: 'Cannot move line items into Income or Taxes' })
+      return
+    }
+    if (target_category_id === lineItem.budget_category_id) {
+      res.status(400).json({ error: 'Line item is already in that category' })
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('budget_category_line_items')
+      .update({ budget_category_id: target_category_id })
+      .eq('id', req.params.lineItemId)
+      .select('id, name, amount, period')
+      .single()
+
+    if (error) { res.status(500).json({ error: 'Failed to move line item' }); return }
+    res.json({ lineItem: data })
+  } catch (err) {
+    if (err instanceof z.ZodError) { res.status(400).json({ error: 'Invalid request', details: err.errors }); return }
+    logger.error({ err }, 'Move line item error')
+    res.status(500).json({ error: 'Failed to move line item' })
   }
 })
 

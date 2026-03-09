@@ -11,6 +11,7 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
   error?: string
   options: SelectOption[]
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  placeholder?: string
 }
 
 /**
@@ -27,6 +28,7 @@ export function Select({
   className: _className,
   required,
   disabled,
+  placeholder,
   ...rest
 }: SelectProps) {
   const selectId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
@@ -44,6 +46,7 @@ export function Select({
       }
       id={selectId}
       aria-label={rest['aria-label']}
+      placeholder={placeholder}
     />
   )
 }

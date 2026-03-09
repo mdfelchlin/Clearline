@@ -102,6 +102,11 @@ export const budgetService = {
     await api.delete(`/budgets/${year}/categories/${categoryId}/line-items/${lineItemId}`)
   },
 
+  async moveLineItem(year: number, lineItemId: string, targetCategoryId: string): Promise<LineItem> {
+    const data = await api.patch<{ lineItem: LineItem }>(`/budgets/${year}/line-items/${lineItemId}/move`, { target_category_id: targetCategoryId })
+    return data.lineItem
+  },
+
   async getStocks(): Promise<Stock[]> {
     const data = await api.get<{ stocks: Stock[] }>('/stocks')
     return data.stocks
