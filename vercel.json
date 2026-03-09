@@ -5,15 +5,9 @@
       "src": "src/frontend/package.json",
       "use": "@vercel/static-build",
       "config": { "distDir": "dist" }
-    },
-    {
-      "src": "src/api/src/index.ts",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "src/api/src/index.ts" },
-    { "src": "/health", "dest": "src/api/src/index.ts" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
