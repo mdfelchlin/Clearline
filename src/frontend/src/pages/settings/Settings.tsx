@@ -112,7 +112,7 @@ function AccountMembersTab() {
                 <span className="member-email">{m.users.email}</span>
                 <span className={`badge badge-${m.role}`}>{m.role}</span>
               </div>
-              {user?.id === account?.owner_id && m.user_id !== user.id && (
+              {user?.id === account?.owner_id && m.user_id !== user?.id && (
                 <Button
                   variant="danger"
                   size="sm"
