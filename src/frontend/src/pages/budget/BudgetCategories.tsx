@@ -261,6 +261,8 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
   const incomeCategory = categories?.find((c) => c.is_income_category)
   const taxesCategory = categories?.find((c) => c.is_taxes_category)
   const expenseCategories = categories?.filter((c) => !c.is_income_category && !c.is_taxes_category) ?? []
+  const expenseLeft = expenseCategories.filter((_, i) => i % 2 === 0)
+  const expenseRight = expenseCategories.filter((_, i) => i % 2 === 1)
 
   const openLineItemContext =
     openLineItemMenuId && expenseCategories.length > 0
@@ -331,72 +333,144 @@ export default function BudgetCategories({ categories: categoriesProp }: BudgetC
             </div>
           )}
 
-          {expenseCategories.map((cat) => {
-            const isCollapsed = collapsedIds.has(cat.id)
-            return (
-              <div key={cat.id} className={`category-group${isCollapsed ? ' category-group--collapsed' : ''}`}>
-                <div
-                  className="category-header category-header--clickable"
-                  onClick={() => toggleCategory(cat.id)}
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={!isCollapsed}
-                  aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${cat.name}`}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategory(cat.id) } }}
-                >
-                  <span className="category-header-chevron" aria-hidden>
-                    {isCollapsed ? <ChevronRight size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-                  </span>
-                  <span className="category-name">{cat.name}</span>
-                  {cat.is_tax_deduction && <span className="badge badge-info">Tax deductible</span>}
-                  <span className="category-total">{formatCurrency(categoryTotal(cat))}</span>
-                  <div className="category-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => openAddLineItem(cat)}>+ Line item</button>
-                    <button
-                      ref={openCategoryMenuId === cat.id ? categoryMenuTriggerRef : undefined}
-                      type="button"
-                      className="btn btn-ghost btn-sm btn-icon"
-                      onClick={() => setOpenCategoryMenuId((id) => (id === cat.id ? null : cat.id))}
-                      aria-label={`Actions for ${cat.name}`}
-                      aria-expanded={openCategoryMenuId === cat.id}
-                      aria-haspopup="menu"
+          <div className="categories-columns">
+            <div className="categories-column">
+              {expenseLeft.map((cat) => {
+                const isCollapsed = collapsedIds.has(cat.id)
+                return (
+                  <div key={cat.id} className={`category-group${isCollapsed ? ' category-group--collapsed' : ''}`}>
+                    <div
+                      className="category-header category-header--clickable"
+                      onClick={() => toggleCategory(cat.id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={!isCollapsed}
+                      aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${cat.name}`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategory(cat.id) } }}
                     >
-                      <MoreVertical size={16} strokeWidth={2} />
-                    </button>
+                      <span className="category-header-chevron" aria-hidden>
+                        {isCollapsed ? <ChevronRight size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                      </span>
+                      <span className="category-name">{cat.name}</span>
+                      {cat.is_tax_deduction && <span className="badge badge-info">Tax deductible</span>}
+                      <span className="category-total">{formatCurrency(categoryTotal(cat))}</span>
+                      <div className="category-actions" onClick={(e) => e.stopPropagation()}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => openAddLineItem(cat)}>+ Line item</button>
+                        <button
+                          ref={openCategoryMenuId === cat.id ? categoryMenuTriggerRef : undefined}
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-icon"
+                          onClick={() => setOpenCategoryMenuId((id) => (id === cat.id ? null : cat.id))}
+                          aria-label={`Actions for ${cat.name}`}
+                          aria-expanded={openCategoryMenuId === cat.id}
+                          aria-haspopup="menu"
+                        >
+                          <MoreVertical size={16} strokeWidth={2} />
+                        </button>
+                      </div>
+                    </div>
+                    {cat.budget_category_line_items.length > 0 && (
+                      <div className="category-content">
+                        <ul className="line-items-list">
+                          {cat.budget_category_line_items.map((item) => (
+                            <li key={item.id} className="line-item">
+                              <span className="line-item-name">{item.name}</span>
+                              <span className="line-item-period">{item.period}</span>
+                              <span className="line-item-amount">{formatCurrency(item.amount)}</span>
+                              <span className="line-item-annual">
+                                ({formatCurrency(annualAmount(item.amount, item.period))}/yr)
+                              </span>
+                              <div className="line-item-actions line-item-actions--menu">
+                                <button
+                                  ref={openLineItemMenuId === item.id ? lineItemMenuTriggerRef : undefined}
+                                  type="button"
+                                  className="btn btn-ghost btn-sm btn-icon"
+                                  onClick={() => setOpenLineItemMenuId((id) => (id === item.id ? null : item.id))}
+                                  aria-label={`Actions for ${item.name}`}
+                                  aria-expanded={openLineItemMenuId === item.id}
+                                  aria-haspopup="menu"
+                                >
+                                  <MoreVertical size={16} strokeWidth={2} />
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                </div>
-                {cat.budget_category_line_items.length > 0 && (
-                  <div className="category-content">
-                    <ul className="line-items-list">
-                      {cat.budget_category_line_items.map((item) => (
-                        <li key={item.id} className="line-item">
-                          <span className="line-item-name">{item.name}</span>
-                          <span className="line-item-period">{item.period}</span>
-                          <span className="line-item-amount">{formatCurrency(item.amount)}</span>
-                          <span className="line-item-annual">
-                            ({formatCurrency(annualAmount(item.amount, item.period))}/yr)
-                          </span>
-                          <div className="line-item-actions line-item-actions--menu">
-                            <button
-                              ref={openLineItemMenuId === item.id ? lineItemMenuTriggerRef : undefined}
-                              type="button"
-                              className="btn btn-ghost btn-sm btn-icon"
-                              onClick={() => setOpenLineItemMenuId((id) => (id === item.id ? null : item.id))}
-                              aria-label={`Actions for ${item.name}`}
-                              aria-expanded={openLineItemMenuId === item.id}
-                              aria-haspopup="menu"
-                            >
-                              <MoreVertical size={16} strokeWidth={2} />
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                )
+              })}
+            </div>
+            <div className="categories-column">
+              {expenseRight.map((cat) => {
+                const isCollapsed = collapsedIds.has(cat.id)
+                return (
+                  <div key={cat.id} className={`category-group${isCollapsed ? ' category-group--collapsed' : ''}`}>
+                    <div
+                      className="category-header category-header--clickable"
+                      onClick={() => toggleCategory(cat.id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={!isCollapsed}
+                      aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${cat.name}`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCategory(cat.id) } }}
+                    >
+                      <span className="category-header-chevron" aria-hidden>
+                        {isCollapsed ? <ChevronRight size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                      </span>
+                      <span className="category-name">{cat.name}</span>
+                      {cat.is_tax_deduction && <span className="badge badge-info">Tax deductible</span>}
+                      <span className="category-total">{formatCurrency(categoryTotal(cat))}</span>
+                      <div className="category-actions" onClick={(e) => e.stopPropagation()}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => openAddLineItem(cat)}>+ Line item</button>
+                        <button
+                          ref={openCategoryMenuId === cat.id ? categoryMenuTriggerRef : undefined}
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-icon"
+                          onClick={() => setOpenCategoryMenuId((id) => (id === cat.id ? null : cat.id))}
+                          aria-label={`Actions for ${cat.name}`}
+                          aria-expanded={openCategoryMenuId === cat.id}
+                          aria-haspopup="menu"
+                        >
+                          <MoreVertical size={16} strokeWidth={2} />
+                        </button>
+                      </div>
+                    </div>
+                    {cat.budget_category_line_items.length > 0 && (
+                      <div className="category-content">
+                        <ul className="line-items-list">
+                          {cat.budget_category_line_items.map((item) => (
+                            <li key={item.id} className="line-item">
+                              <span className="line-item-name">{item.name}</span>
+                              <span className="line-item-period">{item.period}</span>
+                              <span className="line-item-amount">{formatCurrency(item.amount)}</span>
+                              <span className="line-item-annual">
+                                ({formatCurrency(annualAmount(item.amount, item.period))}/yr)
+                              </span>
+                              <div className="line-item-actions line-item-actions--menu">
+                                <button
+                                  ref={openLineItemMenuId === item.id ? lineItemMenuTriggerRef : undefined}
+                                  type="button"
+                                  className="btn btn-ghost btn-sm btn-icon"
+                                  onClick={() => setOpenLineItemMenuId((id) => (id === item.id ? null : item.id))}
+                                  aria-label={`Actions for ${item.name}`}
+                                  aria-expanded={openLineItemMenuId === item.id}
+                                  aria-haspopup="menu"
+                                >
+                                  <MoreVertical size={16} strokeWidth={2} />
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          </div>
 
           {taxesCategory && (
             <div className="category-group category-group-system">
