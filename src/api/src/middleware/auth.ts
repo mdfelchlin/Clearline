@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express'
 import { supabase, supabaseAuth } from '../lib/supabase'
+import { ensureUserAndAccount } from '../lib/ensureUser'
 import { AuthenticatedRequest } from '../types'
 import { logger } from '../lib/logger'
 
@@ -24,14 +25,30 @@ export async function requireAuth(
       return
     }
 
-    const { data: userData, error: userError } = await supabase
+    let { data: userData, error: userError } = await supabase
       .from('users')
       .select('id, email, account_id')
       .eq('id', data.user.id)
       .single()
 
     if (userError || !userData) {
-      logger.warn({ userId: data.user.id, userError: userError?.message }, 'requireAuth: user not found in public.users')
+      try {
+        await ensureUserAndAccount(data.user.id, data.user.email ?? '')
+        const retry = await supabase
+          .from('users')
+          .select('id, email, account_id')
+          .eq('id', data.user.id)
+          .single()
+        userData = retry.data
+        userError = retry.error
+      } catch (ensureErr) {
+        logger.warn({ userId: data.user.id, err: ensureErr }, 'requireAuth: ensureUserAndAccount failed')
+        res.status(401).json({ error: 'User not found' })
+        return
+      }
+    }
+
+    if (userError || !userData) {
       res.status(401).json({ error: 'User not found' })
       return
     }

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { supabase, supabaseAuth } from '../lib/supabase'
+import { ensureUserAndAccount } from '../lib/ensureUser'
 import { requireAuth } from '../middleware/auth'
 import { authRateLimit } from '../middleware/rateLimit'
 import { AuthenticatedRequest } from '../types'
@@ -22,68 +23,6 @@ const preferencesSchema = z.object({
   display_name: z.string().max(100).optional(),
   notification_preferences: z.record(z.boolean()).optional(),
 })
-
-async function ensureUserAndAccount(userId: string, email: string) {
-  // Check by auth user ID first
-  const { data: existingById } = await supabase
-    .from('users')
-    .select('id, account_id')
-    .eq('id', userId)
-    .single()
-
-  if (existingById) return existingById
-
-  // Check by email — handles the case where auth user was deleted and recreated
-  // (new UUID but same email, stale row in public.users)
-  const { data: existingByEmail } = await supabase
-    .from('users')
-    .select('id, account_id')
-    .eq('email', email)
-    .single()
-
-  if (existingByEmail) {
-    // Stale row from a deleted auth user — delete and re-insert with the new UUID
-    // (updating a PK doesn't cascade to FK references in account_members etc.)
-    await supabase.from('account_members').delete().eq('user_id', existingByEmail.id)
-    await supabase.from('users').delete().eq('id', existingByEmail.id)
-    // Fall through to the fresh insert below
-  }
-
-  // Insert user first (no account_id yet) so the accounts FK can reference it
-  const { data: newUser, error: userError } = await supabase
-    .from('users')
-    .insert({ id: userId, email })
-    .select('id, account_id')
-    .single()
-
-  if (userError || !newUser) {
-    throw new Error(`Failed to create user: ${userError?.message}`)
-  }
-
-  // Now create account with owner_id pointing to the user we just inserted
-  const { data: newAccount, error: accountError } = await supabase
-    .from('accounts')
-    .insert({ owner_id: userId })
-    .select('id')
-    .single()
-
-  if (accountError || !newAccount) {
-    throw new Error(`Failed to create account: ${accountError?.message}`)
-  }
-
-  // Update user with the new account_id
-  await supabase
-    .from('users')
-    .update({ account_id: newAccount.id })
-    .eq('id', userId)
-
-  // Add owner to account_members
-  await supabase
-    .from('account_members')
-    .insert({ account_id: newAccount.id, user_id: userId, role: 'owner' })
-
-  return { id: userId, account_id: newAccount.id }
-}
 
 router.post('/google', authRateLimit, async (req: Request, res: Response): Promise<void> => {
   try {
@@ -183,7 +122,14 @@ router.post('/email', authRateLimit, async (req: Request, res: Response): Promis
       data = result.data
       error = result.error
     } else {
-      const result = await supabaseAuth.auth.signInWithOtp({ email })
+      const redirectTo =
+        process.env.FRONTEND_URL != null && process.env.FRONTEND_URL !== ''
+          ? `${process.env.FRONTEND_URL.replace(/\/$/, '')}/auth/callback`
+          : undefined
+      const result = await supabaseAuth.auth.signInWithOtp({
+        email,
+        ...(redirectTo && { options: { emailRedirectTo: redirectTo } }),
+      })
       data = result.data
       error = result.error
 
